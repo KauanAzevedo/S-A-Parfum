@@ -46,6 +46,7 @@ model User {
   addresses    Address[]
   orders       Order[]
   reviews      Review[]
+  favorites    Favorite[]
   auditLogs    AuditLog[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -98,10 +99,23 @@ model Product {
   cartItems      CartItem[]
   orderItems     OrderItem[]
   reviews        Review[]
+  favorites      Favorite[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([brand, gender, status])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
 }
 
 model ProductImage {

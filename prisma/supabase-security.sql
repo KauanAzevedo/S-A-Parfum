@@ -21,3 +21,4 @@ alter table public."Refund" enable row level security;
 alter table public."AdminSettings" enable row level security;
 alter table public."AuditLog" enable row level security;
 alter table public."OrderSequence" enable row level security;
+alter table public."Favorite" enable row level security;
