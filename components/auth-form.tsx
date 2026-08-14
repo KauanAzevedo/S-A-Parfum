@@ -38,8 +38,11 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
         const name=String(data.get("name")||"").trim();
         const {data:result,error:authError}=await supabase.auth.signUp({email,password,options:{data:{name,phone:phone.replace(/\D/g,""),cpf:cpf.replace(/\D/g,"")},emailRedirectTo:`${window.location.origin}/conta`}});
         if(authError)throw authError;
-        if(result.session)window.location.href="/";
-        else setMessage("Cadastro realizado! Verifique seu e-mail para confirmar a conta.");
+        if(!result.session){
+          const {error:loginError}=await supabase.auth.signInWithPassword({email,password});
+          if(loginError)throw loginError;
+        }
+        window.location.href="/";
       }else{
         const {error:authError}=await supabase.auth.signInWithPassword({email,password});
         if(authError)throw authError;
