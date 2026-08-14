@@ -23,6 +23,6 @@ body{background:#080808;color:#f5f2eb;background-image:radial-gradient(circle at
 }
 
 /* Logo oficial transparente no menu do tema claro. */
-.brand-image{display:flex;width:150px;height:68px;align-items:center;justify-content:center;overflow:hidden}
+.brand-image{display:flex;width:184px;height:78px;min-width:184px;align-items:center;justify-content:center;overflow:hidden}
 .brand-image img{display:block;width:100%;height:100%;object-fit:contain}
-@media(max-width:800px){.brand-image{width:118px;height:54px}}
+@media(max-width:800px){.brand-image{width:138px;height:62px;min-width:138px}}
