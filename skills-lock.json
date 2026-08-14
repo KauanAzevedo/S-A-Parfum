@@ -12,6 +12,12 @@
       "sourceType": "github",
       "skillPath": "skills/neon-postgres/SKILL.md",
       "computedHash": "af5d7593c2c45b33c8860b37fd470dcc40027972420ebd06311c1263296fd0a5"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "a6260582f48df8ba53380bb9b9e870ed2ae5fe147799e90ed783b8aa25167d50"
     }
   }
 }
