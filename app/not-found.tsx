@@ -1,0 +1,1 @@
+export default function NotFound(){return <main className="min-h-screen grid place-items-center text-center p-6"><div><p className="eyebrow">404</p><h1 className="display text-7xl mt-3">Página não encontrada.</h1><a className="btn-primary mt-8" href="/">Voltar ao início</a></div></main>}

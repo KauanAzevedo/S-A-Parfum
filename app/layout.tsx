@@ -1,0 +1,4 @@
+import type { Metadata } from "next";
+import "./globals.css";
+export const metadata:Metadata={metadataBase:new URL(process.env.NEXT_PUBLIC_SITE_URL||"http://localhost:3000"),title:{default:"S&A Parfum | Perfumes que marcam presença",template:"%s | S&A Parfum"},description:"Perfumaria premium com fragrâncias importadas e árabes 100% originais.",openGraph:{title:"S&A Parfum",description:"Perfumes que marcam presença.",type:"website",locale:"pt_BR"},twitter:{card:"summary_large_image",title:"S&A Parfum"}};
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="pt-BR"><body>{children}<a className="whatsapp" href="https://wa.me/5500000000000" aria-label="Falar no WhatsApp">WhatsApp</a></body></html>}

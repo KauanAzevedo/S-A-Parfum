@@ -1,0 +1,2 @@
+import { Header } from "./header";import { Footer } from "./footer";
+export function PolicyPage({title,children}:{title:string;children:React.ReactNode}){return <><Header/><main className="container-site pt-36 pb-24 max-w-4xl"><p className="eyebrow">Última atualização: 1º de julho de 2026</p><h1 className="display text-6xl mt-4">{title}</h1><article className="mt-10 space-y-7 text-white/60 leading-relaxed [&_h2]:display [&_h2]:text-3xl [&_h2]:text-white [&_h2]:pt-4">{children}</article></main><Footer/></>}
