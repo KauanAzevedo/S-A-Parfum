@@ -1,10 +1,15 @@
-import { PolicyPage } from "@/components/policy-page";
+import type {Metadata} from "next";
+import {PolicyPage} from "@/components/policy-page";
 
-export default function Page() {
-  return <PolicyPage title="Termos de Uso">
-    <h2>Finalidade</h2><p>O site apresenta informações institucionais da Conceito Barber Shop, incluindo equipe, serviços, produtos, localização e formas de contato.</p>
-    <h2>Contato e disponibilidade</h2><p>Consultas feitas pelo WhatsApp não constituem reserva automática. Valores, produtos, horários de atendimento e disponibilidade podem ser confirmados diretamente com a barbearia.</p>
-    <h2>Conteúdo</h2><p>Não é permitido copiar a identidade visual, imagens ou conteúdo do site para fins ilícitos ou que prejudiquem a Conceito Barber Shop.</p>
-    <h2>Alterações</h2><p>Estas informações podem ser atualizadas para refletir mudanças nos serviços e canais de atendimento.</p>
-  </PolicyPage>;
-}
+export const metadata:Metadata={title:"Termos de Uso e Compra",description:"Conheça as regras de utilização e compra na loja virtual S&A Parfum."};
+export default function Page(){return <PolicyPage title="Termos de Uso e Compra" intro="Ao criar uma conta, navegar pela loja ou realizar um pedido, você declara que leu e concorda com estes termos e com as políticas aplicáveis à compra.">
+  <h2>1. Uso da loja</h2><p>A loja virtual S&amp;A Parfum permite consultar perfumes, criar uma conta, salvar favoritos, montar um carrinho e realizar pedidos. O usuário deve utilizar o site de forma lícita e fornecer informações verdadeiras, completas e atualizadas.</p>
+  <h2>2. Conta e segurança</h2><p>Você é responsável por proteger sua senha e pelos atos realizados em sua conta. Caso suspeite de acesso não autorizado, altere sua senha e entre em contato conosco. Podemos limitar ou suspender acessos quando houver indícios de fraude, uso abusivo ou violação destes termos.</p>
+  <h2>3. Produtos, preços e estoque</h2><p>As imagens buscam representar os produtos com fidelidade, mas cores podem variar conforme a tela. Preços, promoções e estoque podem ser alterados antes da conclusão do pedido. Erros evidentes poderão ser corrigidos, com comunicação ao cliente e possibilidade de cancelamento ou confirmação nas condições corretas.</p>
+  <h2>4. Pedidos e pagamento</h2><p>O envio do pedido não significa aprovação automática. A compra depende da confirmação do pagamento, validação de dados e disponibilidade de estoque. Se o pagamento não for aprovado ou concluído no prazo informado, o pedido poderá ser cancelado.</p>
+  <h2>5. Entrega, trocas e devoluções</h2><p>Os prazos, deveres de conferência do endereço e demais condições estão descritos na <a href="/politica-de-entrega">Política de Entrega</a>. Arrependimento, defeitos, trocas e reembolsos seguem a <a href="/trocas-e-devolucoes">Política de Trocas e Devoluções</a> e a legislação aplicável.</p>
+  <h2>6. Privacidade</h2><p>O tratamento de dados pessoais necessário para conta, atendimento e pedidos é explicado na <a href="/politica-de-privacidade">Política de Privacidade</a>.</p>
+  <h2>7. Propriedade intelectual</h2><p>A identidade visual, textos, fotografias próprias, marcas, códigos e demais conteúdos da S&amp;A Parfum são protegidos. Não é permitido copiá-los ou utilizá-los comercialmente sem autorização, respeitados conteúdos pertencentes aos respectivos fabricantes e titulares.</p>
+  <h2>8. Responsabilidades</h2><p>Buscamos manter a loja segura e disponível, mas podem ocorrer interrupções para manutenção, falhas de fornecedores ou eventos externos. Nada nestes termos exclui ou reduz direitos obrigatórios assegurados ao consumidor.</p>
+  <h2>9. Alterações</h2><p>Estes termos podem ser atualizados para acompanhar mudanças legais ou operacionais. Para cada compra, será considerada a versão apresentada e aceita no momento da finalização.</p>
+</PolicyPage>}

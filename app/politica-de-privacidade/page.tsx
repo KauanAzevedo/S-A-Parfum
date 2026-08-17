@@ -1,10 +1,16 @@
-import { PolicyPage } from "@/components/policy-page";
+import type {Metadata} from "next";
+import {PolicyPage} from "@/components/policy-page";
 
-export default function Page() {
-  return <PolicyPage title="Política de Privacidade">
-    <h2>Como tratamos seus dados</h2><p>Este site é exclusivamente institucional e não possui cadastro, login ou banco de dados próprio. Ao escolher falar conosco pelo WhatsApp, o atendimento passa a ocorrer naquele serviço.</p>
-    <h2>Formulário de contato</h2><p>As informações preenchidas no formulário não são gravadas pelo site. Elas são usadas apenas para preparar a mensagem que você decide enviar pelo WhatsApp.</p>
-    <h2>Seus direitos</h2><p>Solicitações relacionadas à privacidade podem ser feitas pelo telefone (48) 99188-2976, conforme os direitos previstos na LGPD.</p>
-    <h2>Serviços externos</h2><p>O site pode carregar mapas, imagens e links de serviços externos, sujeitos às respectivas políticas de privacidade.</p>
-  </PolicyPage>;
-}
+export const metadata:Metadata={title:"Política de Privacidade",description:"Saiba como a S&A Parfum coleta, utiliza e protege seus dados pessoais."};
+export default function Page(){return <PolicyPage title="Política de Privacidade" intro="Esta política explica como a S&A Parfum trata os dados pessoais de clientes e visitantes de sua loja virtual, em conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD).">
+  <h2>1. Quem controla seus dados</h2><p>A S&amp;A Parfum é responsável pelas decisões relacionadas ao tratamento dos dados pessoais utilizados na operação desta loja virtual. Solicitações sobre privacidade podem ser enviadas para <a href="mailto:contato@saparfum.com.br">contato@saparfum.com.br</a>.</p>
+  <h2>2. Dados que podemos coletar</h2><p>Conforme sua interação com a loja, podemos tratar:</p><ul><li>nome completo, e-mail, CPF e telefone;</li><li>endereços de entrega e cobrança;</li><li>dados de conta, autenticação e sessão;</li><li>produtos favoritos, conteúdo do carrinho, pedidos, cupons e histórico de atendimento;</li><li>informações técnicas, como endereço IP, navegador, dispositivo, registros de acesso e cookies necessários;</li><li>dados relacionados ao pagamento. Informações completas de cartão não devem ser armazenadas diretamente pela S&amp;A Parfum e serão tratadas pelo provedor de pagamento quando a integração estiver disponível.</li></ul>
+  <h2>3. Como utilizamos os dados</h2><p>Usamos os dados para criar e proteger sua conta, autenticar acessos, processar pedidos, entregar produtos, prestar atendimento, prevenir fraudes, manter o carrinho e os favoritos, cumprir obrigações legais e fiscais e melhorar a segurança e o funcionamento da loja.</p>
+  <h2>4. Bases legais</h2><p>O tratamento pode ocorrer para executar contrato ou procedimentos relacionados à compra, cumprir obrigações legais e regulatórias, exercer direitos, prevenir fraudes, atender interesses legítimos compatíveis com seus direitos e, quando necessário, com seu consentimento.</p>
+  <h2>5. Compartilhamento</h2><p>Os dados podem ser compartilhados, no limite necessário, com fornecedores de hospedagem, banco de dados, autenticação, armazenamento, prevenção a fraudes, pagamento, emissão fiscal, atendimento, Correios e transportadoras. Também poderemos compartilhar informações quando exigido por lei ou autoridade competente. Não vendemos dados pessoais.</p>
+  <h2>6. Armazenamento e segurança</h2><p>Adotamos controles técnicos e administrativos razoáveis para proteger os dados contra acessos não autorizados, perda, alteração ou divulgação. Nenhum sistema é totalmente imune a incidentes; caso um evento relevante ocorra, serão adotadas as medidas previstas na legislação.</p>
+  <h2>7. Prazo de retenção</h2><p>Os dados são mantidos enquanto a conta estiver ativa, pelo período necessário para prestar os serviços ou pelos prazos exigidos para obrigações fiscais, consumeristas, contratuais e de prevenção a fraudes. Após esse período, poderão ser eliminados ou anonimizados.</p>
+  <h2>8. Cookies</h2><p>Podemos utilizar cookies estritamente necessários para login, segurança, preferências e funcionamento do carrinho. Cookies opcionais de análise ou publicidade, se adicionados futuramente, deverão respeitar as escolhas apresentadas ao visitante. Você também pode controlar cookies nas configurações do navegador.</p>
+  <h2>9. Seus direitos</h2><p>Nos termos da LGPD, você pode solicitar confirmação e acesso, correção, portabilidade quando aplicável, informação sobre compartilhamentos, revisão de decisões automatizadas, anonimização, bloqueio ou eliminação nos casos permitidos e revogação do consentimento. Poderemos confirmar sua identidade antes de atender a solicitação e conservar dados quando houver obrigação legal.</p>
+  <h2>10. Atualizações</h2><p>Esta política poderá ser atualizada para refletir mudanças na loja, nos fornecedores ou na legislação. A versão vigente e sua data estarão sempre disponíveis nesta página.</p>
+</PolicyPage>}

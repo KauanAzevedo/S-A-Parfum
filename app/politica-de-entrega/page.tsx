@@ -1,0 +1,14 @@
+import type {Metadata} from "next";
+import {PolicyPage} from "@/components/policy-page";
+
+export const metadata:Metadata={title:"Política de Entrega",description:"Conheça os prazos e as condições de entrega dos pedidos da S&A Parfum."};
+export default function Page(){return <PolicyPage title="Política de Entrega" intro="Confira como funcionam a preparação, o envio e o recebimento dos pedidos realizados na S&A Parfum.">
+  <h2>1. Área de atendimento</h2><p>As entregas poderão ser realizadas em território brasileiro por Correios ou transportadoras disponíveis para o CEP informado. A disponibilidade de cada modalidade depende da região, das dimensões do pedido e da operação logística vigente.</p>
+  <h2>2. Prazo de preparação e entrega</h2><p>O prazo apresentado no checkout é uma estimativa e começa a ser contado após a confirmação do pagamento e a aprovação do pedido. Ele é composto pelo tempo de preparação e pelo transporte. Pedidos realizados ou aprovados em finais de semana e feriados começam a ser processados no próximo dia útil.</p>
+  <h2>3. Frete</h2><p>O valor do frete, eventual gratuidade e as opções disponíveis serão informados antes da finalização da compra. Campanhas de frete grátis podem ter prazo, CEP, valor mínimo ou produtos elegíveis específicos.</p>
+  <h2>4. Endereço de entrega</h2><p>O cliente deve revisar rua, número, complemento, bairro, cidade, estado e CEP antes de concluir o pedido. Após o despacho, pode não ser possível alterar o endereço. Se o pedido retornar por endereço incorreto, incompleto ou impossibilidade de recebimento, o reenvio poderá depender do pagamento de novo frete, salvo quando o erro for da S&amp;A Parfum ou do transportador.</p>
+  <h2>5. Tentativas de entrega</h2><p>É necessário haver uma pessoa autorizada no local para receber a encomenda. A quantidade de tentativas e o prazo para retirada em agência ou unidade de distribuição seguem as regras da transportadora selecionada. Se o pedido retornar, entraremos em contato para combinar reenvio ou solução adequada.</p>
+  <h2>6. Rastreamento</h2><p>Quando disponibilizado pela transportadora, o código ou link de rastreamento será associado ao pedido e poderá ser enviado ao e-mail cadastrado. Atualizações podem levar algum tempo para aparecer após a postagem.</p>
+  <h2>7. Atrasos e situações externas</h2><p>Greves, chuvas intensas, restrições de acesso, períodos de alta demanda ou outros eventos fora do controle razoável podem afetar o prazo estimado. Nessas situações, acompanharemos o envio e prestaremos as informações disponíveis.</p>
+  <h2>8. Embalagem avariada ou divergência</h2><p>Verifique a embalagem no recebimento. Recuse a entrega se houver violação evidente, vazamento, avaria grave, produto diferente do pedido ou ausência de itens e comunique a S&amp;A Parfum imediatamente. Se o problema só for percebido após o recebimento, preserve a embalagem, fotografe o ocorrido e entre em contato o quanto antes.</p>
+</PolicyPage>}
