@@ -53,8 +53,8 @@ test("áreas de cliente e administração continuam presentes e protegidas",asyn
   for(const path of ["app/conta/page.tsx","app/admin/page.tsx","app/api/account/route.ts","app/api/admin/route.ts","components/session-timeout.tsx"])await access(new URL(`../${path}`,import.meta.url));
   const [account,admin]=await Promise.all([read("components/account-dashboard.tsx"),read("components/admin-dashboard.tsx")]);
   assert.match(account,/window\.location\.href="\/entrar"/);
-  assert.match(admin,/window\.location\.href="\/entrar"/);
-  assert.match(admin,/response\.status===403/);
+  assert.match(admin,/window\.location\.href\s*=\s*"\/entrar"/);
+  assert.match(admin,/response\.status\s*===\s*403/);
 });
 
 test("cadastro não exibe erro depois de criar a conta",async()=>{

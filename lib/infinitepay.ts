@@ -85,6 +85,9 @@ export async function confirmInfinitePayOrder(input: {
     }
     return order;
   }
+  if (order.payment.status !== "PENDING" || order.status === "CANCELLED") {
+    throw new Error("O prazo de pagamento deste pedido expirou.");
+  }
 
   const checked = await checkInfinitePayPayment(input);
   if (!checked.paid) throw new Error("Pagamento ainda não aprovado.");
@@ -121,16 +124,21 @@ export async function confirmInfinitePayOrder(input: {
         },
       },
     });
-    if (paid.count) {
-      await tx.order.update({
-        where: { id: order.id },
-        data: {
-          status: "PAID",
-          discount: captureMethod === "pix" ? (fullAmount - confirmedAmount) / 100 : 0,
-          total: confirmedAmount / 100,
-        },
-      });
+    if (!paid.count) {
+      const current = await tx.payment.findUnique({ where: { id: order.payment!.id } });
+      if (current?.status !== "PAID") {
+        throw new Error("O prazo de pagamento deste pedido expirou.");
+      }
+      return tx.order.findUniqueOrThrow({ where: { id: order.id } });
     }
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        status: "PAID",
+        discount: captureMethod === "pix" ? (fullAmount - confirmedAmount) / 100 : 0,
+        total: confirmedAmount / 100,
+      },
+    });
     return tx.order.findUniqueOrThrow({ where: { id: order.id } });
   });
 }

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { authenticatedAdmin } from "@/lib/admin-auth";
+import { cancelExpiredPendingOrders } from "@/lib/order-expiration";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const admin = await authenticatedAdmin(request);
   if (!admin) return NextResponse.json({ error: "Acesso administrativo não autorizado." }, { status: 403 });
+
+  await cancelExpiredPendingOrders();
 
   const [products, orders, coupons, users, auditLogs] = await Promise.all([
     prisma.product.findMany({ include: { category: true, images: { orderBy: { position: "asc" } } }, orderBy: { createdAt: "desc" } }),
@@ -16,7 +19,14 @@ export async function GET(request: Request) {
 
   const paidOrders = orders.filter(order => ["PAID", "PREPARING", "SHIPPED", "DELIVERED"].includes(order.status));
   const revenue = paidOrders.reduce((total, order) => total + Number(order.total), 0);
-  const cost = paidOrders.reduce((total, order) => total + order.items.reduce((sum, item) => sum + Number(item.cost) * item.quantity, 0), 0);
+  const cost = paidOrders.reduce((total, order) => {
+    const productCost = order.items.reduce((sum, item) => sum + Number(item.cost) * item.quantity, 0);
+    const raw = order.payment?.raw;
+    const operatorFee = typeof raw === "object" && raw !== null && !Array.isArray(raw)
+      ? Number((raw as Record<string, unknown>).operatorFee) || 0
+      : 0;
+    return total + productCost + operatorFee;
+  }, 0);
 
   return NextResponse.json({
     admin: { id: admin.id, name: admin.name, email: admin.email },
