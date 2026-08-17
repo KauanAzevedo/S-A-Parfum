@@ -1,2 +1,34 @@
-import { notFound } from "next/navigation";import { CreditCard, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";import { Header } from "@/components/header";import { Footer } from "@/components/footer";import { money,products } from "@/lib/catalog";import { AddToCart } from "@/components/add-to-cart";
-export function generateStaticParams(){return products.map(p=>({slug:p.slug}))}export default async function ProductPage({params}:{params:Promise<{slug:string}>}){const{slug}=await params;const p=products.find(x=>x.slug===slug);if(!p)notFound();return <><Header/><main className="product-page container-site"><p className="breadcrumbs">Início / Perfumes / {p.name}</p><div className="product-detail"><div className="detail-image"><img src={p.image} alt={`Perfume ${p.name}`}/></div><div className="detail-copy"><p className="eyebrow">{p.brand}</p><h1>{p.name}</h1><div className="rating"><span>{[1,2,3,4,5].map(x=><Star key={x} size={14} fill="currentColor"/>)}</span> 4,9 · 28 avaliações</div><p className="volume">Eau de Parfum · {p.volume}</p>{p.oldPrice&&<del>{money(p.oldPrice)}</del>}<strong>{money(p.price)}</strong><p className="pix">{money(p.price*.95)} no PIX <b>5% OFF</b></p><p className="installments">ou 6x de {money(p.price/6)} sem juros</p><AddToCart productName={p.name}/><div className="delivery"><label htmlFor="cep">Calcule o frete</label><div><input id="cep" placeholder="00000-000"/><button>Calcular</button></div></div><div className="trust-row"><span><ShieldCheck/>Compra segura</span><span><PackageCheck/>Produto original</span><span><Truck/>Envio nacional</span></div></div></div><section className="product-description"><div><p className="eyebrow">A fragrância</p><h2>Uma presença inesquecível.</h2><p>{p.description}</p></div><div><h3>Família olfativa</h3><p>{p.family}</p><h3>Notas em destaque</h3><div className="notes">{p.notes.map(n=><span key={n}>{n}</span>)}</div></div></section></main><Footer/></>}
+import {CreditCard,PackageCheck,ShieldCheck,Truck} from "lucide-react";
+import {notFound} from "next/navigation";
+import {Footer} from "@/components/footer";
+import {Header} from "@/components/header";
+import {ProductActions} from "@/components/product-actions";
+import {ProductGallery} from "@/components/product-gallery";
+import {prisma} from "@/lib/prisma";
+
+const money=(value:number)=>value.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+export default async function ProductPage({params}:{params:Promise<{slug:string}>}){
+  const {slug}=await params;
+  const product=await prisma.product.findFirst({where:{slug,status:"ACTIVE"},include:{category:true,images:{orderBy:{position:"asc"}},reviews:{where:{approved:true},select:{rating:true}}}});
+  if(!product)notFound();
+  const images=product.images.length?product.images.map(image=>image.url):[product.imageUrl];
+  const price=Number(product.price);const oldPrice=product.compareAtPrice?Number(product.compareAtPrice):null;const pix=price*.95;
+  const rating=product.reviews.length?product.reviews.reduce((sum,review)=>sum+review.rating,0)/product.reviews.length:0;
+  const related=await prisma.product.findMany({where:{status:"ACTIVE",id:{not:product.id},OR:[{categoryId:product.categoryId},{gender:product.gender}]},include:{images:{orderBy:{position:"asc"},take:1}},orderBy:{createdAt:"desc"},take:4});
+  return <><Header/><main className={`product-page product-luxury${product.stock<1?" product-sold-out":""}`}><div className="container-site">
+    <nav className="product-breadcrumb"><a href="/">Início</a><span>›</span><a href={`/perfumes?genero=${product.gender.toLowerCase()}`}>{product.gender}</a><span>›</span><span>{product.brand}</span><span>›</span><span>{product.name}</span></nav>
+    <div className="product-showcase"><ProductGallery images={images} name={product.name}/><section className="product-purchase">
+      <div className="product-intro"><p className="eyebrow">{product.brand}</p><h1>{product.name}</h1><div className="product-rating"><span>{rating?"★".repeat(Math.round(rating))+"☆".repeat(5-Math.round(rating)):"☆☆☆☆☆"}</span><small>{product.reviews.length?`${rating.toFixed(1)} · ${product.reviews.length} avaliações`:"Seja o primeiro a avaliar"}</small></div></div>
+      <ul className="product-benefits"><li><ShieldCheck/><span><b>Compra segura</b>Ambiente protegido</span></li><li><CreditCard/><span><b>Pagamento facilitado</b>Até 6x sem juros</span></li><li><PackageCheck/><span><b>Produto original</b>Garantia S&amp;A</span></li></ul>
+      <div className="product-order-box"><div className="product-order-details"><div className="product-volume"><span>Volume</span><button>{product.volume}</button></div><div className="product-stock"><span>Disponibilidade</span>{product.stock>0?<p><b>● Em estoque</b></p>:<p><b className="out">Indisponível</b></p>}</div></div>
+        <div className="product-order-price"><div className="pix-price-column"><span>No PIX</span>{oldPrice&&<del>De {money(oldPrice)}</del>}<div className="pix-main"><strong>{money(pix)}</strong><small>5% de desconto</small></div><p>Preço do produto <b>{money(price)}</b></p></div><div><span>No cartão</span><strong>{money(price)}</strong><small>Em até 6x de {money(price/6)} sem juros</small></div></div>
+        <ProductActions slug={product.slug} stock={product.stock}/>
+      </div>
+      <div className="product-shipping"><label><Truck/> Calcule o frete</label><div><input inputMode="numeric" placeholder="Digite seu CEP" aria-label="CEP"/><button>Calcular</button></div></div>
+      <p className="product-code">Cód. {product.sku} · {product.category.name}</p>
+    </section></div>
+    <section className="product-information"><div className="product-description-column"><p className="eyebrow">Conheça a fragrância</p><h2>Descrição do produto</h2><p>{product.description||`${product.name} é uma fragrância selecionada pela curadoria S&A Parfum.`}</p><section className="product-notes"><p className="eyebrow">Pirâmide olfativa</p><h2>Notas da fragrância</h2><div>{product.notes.length?product.notes.map(note=><span key={note}>{note}</span>):<p>Notas olfativas em preparação.</p>}</div></section></div><aside><h2>Características</h2><dl><div><dt>Marca</dt><dd>{product.brand}</dd></div><div><dt>Gênero</dt><dd>{product.gender}</dd></div><div><dt>Família olfativa</dt><dd>{product.family||"Não informada"}</dd></div><div><dt>Volume</dt><dd>{product.volume}</dd></div><div><dt>Categoria</dt><dd>{product.category.name}</dd></div></dl></aside></section>
+    {related.length>0&&<section className="related-products"><div><p className="eyebrow">Continue descobrindo</p><h2>Perfumes relacionados</h2></div><div className="related-grid">{related.map(item=><a className={item.stock<1?"out-of-stock":""} href={`/produto/${item.slug}`} key={item.id}><img src={item.images[0]?.url||item.imageUrl} alt={item.name}/>{item.stock<1&&<span>Esgotado</span>}<small>{item.brand}</small><h3>{item.name}</h3><b>{money(Number(item.price))}</b></a>)}</div></section>}
+  </div></main><Footer/></>;
+}

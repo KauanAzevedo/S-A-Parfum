@@ -20,7 +20,6 @@ export function SplashScreen(){
   return <div className={`splash-screen${leaving?" splash-leaving":""}`} role="status" aria-label="Carregando S&A Parfum">
     <div className="splash-pattern"/>
     <div className="splash-content">
-      <img src="/logo-sa-header.png" alt="S&A Parfum"/>
       <p>Perfumaria premium</p>
       <div className="splash-progress"><span/></div>
     </div>

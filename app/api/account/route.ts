@@ -11,6 +11,7 @@ export async function GET(request:Request){
     prisma.coupon.findMany({where:{active:true,OR:[{validUntil:null},{validUntil:{gte:new Date()}}]}}),
   ]);
   return NextResponse.json({
+    role:user.role,
     profile:{id:user.id,name:profile?.name,email:user.email,cpf:profile?.cpf,phone:profile?.phone},
     addresses:profile?.addresses||[],
     favorites:(profile?.favorites||[]).map(f=>({id:f.id,productId:f.productId,slug:f.product.slug,name:f.product.name,brand:f.product.brand,image:f.product.imageUrl,price:Number(f.product.price)})),
@@ -24,8 +25,8 @@ export async function PATCH(request:Request){
   const user=await authenticatedCustomer(request);
   if(!user)return NextResponse.json({error:"Não autorizado."},{status:401});
   const body=await request.json();
-  const name=String(body.name||"").trim();const phone=String(body.phone||"").replace(/\D/g,"");const cpf=String(body.cpf||"").replace(/\D/g,"");
-  if(name.length<3||phone.length<10||cpf.length!==11)return NextResponse.json({error:"Revise seus dados."},{status:400});
-  await prisma.user.update({where:{id:user.id},data:{name,phone,cpf}});
+  const name=String(body.name||"").trim();const phone=String(body.phone||"").replace(/\D/g,"");
+  if(name.length<3||phone.length<10)return NextResponse.json({error:"Revise seus dados."},{status:400});
+  await prisma.user.update({where:{id:user.id},data:{name,phone}});
   return NextResponse.json({ok:true});
 }

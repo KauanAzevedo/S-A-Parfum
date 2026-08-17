@@ -1,7 +1,7 @@
 "use client";
 
 import { CreditCard, Eye, EyeOff, LockKeyhole, Mail, Phone, UserRound } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 export function AuthForm({mode}:{mode:"login"|"register"}){
@@ -10,6 +10,10 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
   const [loading,setLoading]=useState(false);
   const [message,setMessage]=useState("");
   const [error,setError]=useState("");
+
+  useEffect(()=>{
+    if(new URLSearchParams(window.location.search).get("sessao")==="expirada")setMessage("Sua sessão expirou por segurança. Entre novamente para continuar.");
+  },[]);
 
   function validCpf(value:string){
     const cpf=value.replace(/\D/g,"");
@@ -20,6 +24,29 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
 
   function maskCpf(value:string){return value.replace(/\D/g,"").slice(0,11).replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2")}
   function maskPhone(value:string){const digits=value.replace(/\D/g,"").slice(0,11);return digits.replace(/^(\d{2})(\d)/,"($1) $2").replace(/(\d{5})(\d)/,"$1-$2")}
+
+  async function redirectToCorrectPanel(){
+    const {data}=await getSupabaseBrowserClient().auth.getSession();
+    const token=data.session?.access_token;
+    if(!token)throw new Error("Não foi possível identificar a sessão.");
+    const params=new URLSearchParams(window.location.search);
+    const requested=params.get("retorno");
+    const returnTo=requested?.startsWith("/")&&!requested.startsWith("//")?requested:null;
+    const action=params.get("acao");
+    const product=params.get("produto");
+    const quantity=Math.max(1,Math.min(99,Number(params.get("quantidade"))||1));
+    if(returnTo&&product&&(action==="favorito"||action==="comprar"||action==="carrinho")){
+      const response=await fetch(action==="favorito"?"/api/account/favorites":"/api/cart",{method:action==="favorito"?"PATCH":"POST",headers:{"content-type":"application/json",authorization:`Bearer ${token}`},body:JSON.stringify({productId:product,quantity})});
+      if(!response.ok){const result=await response.json().catch(()=>({}));throw new Error(result.error||"Você entrou, mas não foi possível concluir a ação.")}
+      const result=await response.json();if(action==="comprar"){window.location.replace("/checkout");return}const target=new URL(returnTo,window.location.origin);target.searchParams.set("adicionado",action==="favorito"?(result.favorite?"favoritos":"removido-favoritos"):"carrinho");
+      window.location.replace(`${target.pathname}${target.search}${target.hash}`);return;
+    }
+    if(returnTo){window.location.replace(returnTo);return}
+    const response=await fetch("/api/auth/destination",{headers:{authorization:`Bearer ${token}`}});
+    if(!response.ok)throw new Error("Não foi possível identificar o tipo da conta.");
+    const result=await response.json();
+    window.location.replace(result.destination==="/admin"?"/admin":"/conta");
+  }
 
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setLoading(true);setError("");setMessage("");
@@ -42,11 +69,11 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
           const {error:loginError}=await supabase.auth.signInWithPassword({email,password});
           if(loginError)throw loginError;
         }
-        window.location.href="/";
+        await redirectToCorrectPanel();
       }else{
         const {error:authError}=await supabase.auth.signInWithPassword({email,password});
         if(authError)throw authError;
-        window.location.href="/";
+        await redirectToCorrectPanel();
       }
     }catch(value){
       const text=value instanceof Error?value.message:"Não foi possível concluir. Tente novamente.";
@@ -62,7 +89,7 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
     <label>Senha<div><LockKeyhole/><input name="password" type={show?"text":"password"} required minLength={6} autoComplete={register?"new-password":"current-password"} placeholder="Mínimo de 6 caracteres"/><button type="button" onClick={()=>setShow(!show)} aria-label={show?"Ocultar senha":"Mostrar senha"}>{show?<EyeOff/>:<Eye/>}</button></div></label>
     {register&&<label>Confirmar senha<div><LockKeyhole/><input name="confirmation" type={show?"text":"password"} required minLength={6} autoComplete="new-password" placeholder="Repita sua senha"/></div></label>}
     {!register&&<div className="auth-options"><label><input type="checkbox"/> Lembrar de mim</label><a href="/recuperar-senha">Esqueci minha senha</a></div>}
-    {register&&<label className="auth-consent"><input type="checkbox" required/> Li e aceito a <a href="/politica-de-privacidade">Política de Privacidade</a> e os <a href="/termos-de-uso">Termos de Uso</a>.</label>}
+    {register&&<label className="auth-consent"><input type="checkbox" required/> <span>Li e aceito os <a href="/termos-de-uso" target="_blank">Termos de Uso e Compra</a> e a <a href="/politica-de-privacidade" target="_blank">Política de Privacidade</a>.</span></label>}
     {error&&<p className="auth-message auth-error" role="alert">{error}</p>}
     {message&&<p className="auth-message auth-success" role="status">{message}</p>}
     <button className="auth-submit" disabled={loading}>{loading?"Aguarde...":register?"Criar minha conta":"Entrar"}</button>

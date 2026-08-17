@@ -1,2 +1,6 @@
-import { Header } from "./header";import { Footer } from "./footer";
-export function PolicyPage({title,children}:{title:string;children:React.ReactNode}){return <><Header/><main className="container-site pt-36 pb-24 max-w-4xl"><p className="eyebrow">Última atualização: 1º de julho de 2026</p><h1 className="display text-6xl mt-4">{title}</h1><article className="mt-10 space-y-7 text-white/60 leading-relaxed [&_h2]:display [&_h2]:text-3xl [&_h2]:text-white [&_h2]:pt-4">{children}</article></main><Footer/></>}
+import {Footer} from "./footer";
+import {Header} from "./header";
+
+export function PolicyPage({title,intro,children}:{title:string;intro?:string;children:React.ReactNode}){
+  return <><Header/><main className="policy-page"><div className="container-site"><p className="eyebrow">Última atualização: 16 de agosto de 2026</p><h1>{title}</h1>{intro&&<p className="policy-intro">{intro}</p>}<article>{children}</article><p className="policy-contact"><b>Precisa falar conosco?</b><br/>Envie sua solicitação para <a href="mailto:contato@saparfum.com.br">contato@saparfum.com.br</a>, informando seu nome e, quando houver, o número do pedido.</p></div></main><Footer/></>;
+}

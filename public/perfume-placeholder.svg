@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="title description">
+  <title id="title">Imagem do perfume em preparação</title>
+  <desc id="description">Ilustração elegante de um frasco de perfume S e A Parfum</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8f5ef"/><stop offset="1" stop-color="#e8dfd1"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d4af68" stop-opacity=".2"/><stop offset="1" stop-color="#8a652b" stop-opacity=".48"/></linearGradient></defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <circle cx="400" cy="475" r="275" fill="#fff" opacity=".55"/>
+  <rect x="310" y="208" width="180" height="94" rx="12" fill="#24211d"/>
+  <rect x="260" y="284" width="280" height="410" rx="38" fill="url(#glass)" stroke="#9f7a3d" stroke-width="5"/>
+  <rect x="292" y="352" width="216" height="224" fill="#fbf8f1" stroke="#b58a3b" stroke-width="3"/>
+  <text x="400" y="445" text-anchor="middle" fill="#171512" font-family="Georgia,serif" font-size="66">S&amp;A</text>
+  <text x="400" y="493" text-anchor="middle" fill="#8b682d" font-family="Arial,sans-serif" font-size="18" letter-spacing="8">PARFUM</text>
+  <text x="400" y="810" text-anchor="middle" fill="#71695e" font-family="Arial,sans-serif" font-size="18" letter-spacing="4">IMAGEM EM PREPARAÇÃO</text>
+</svg>

@@ -1,2 +1,5 @@
-import {Header} from "@/components/header";import {Footer} from "@/components/footer";import {CheckoutForm} from "@/components/checkout-form";
-export default function Checkout(){return <><Header/><main className="checkout container-site"><p className="eyebrow">Finalizar compra</p><h1>Checkout seguro</h1><div className="checkout-grid"><CheckoutForm/><aside><h2>Compra protegida</h2><p>Preços e estoque são recalculados no servidor.</p><p>O pedido só é criado se todos os itens estiverem disponíveis.</p><p>Pagamento atual: aguardando integração InfinitePay.</p></aside></div></main><Footer/></>}
+import {CheckoutForm} from "@/components/checkout-form";
+import {Footer} from "@/components/footer";
+import {Header} from "@/components/header";
+
+export default function Checkout(){return <><Header/><main className="checkout"><div className="container-site"><p className="eyebrow">Compra segura</p><h1>Finalizar compra</h1><CheckoutForm/></div></main><Footer/></>}
