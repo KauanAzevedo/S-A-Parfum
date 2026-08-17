@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { authenticatedCustomer } from "@/lib/account-auth";
+import { cancelExpiredPendingOrders } from "@/lib/order-expiration";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request:Request){
   const user=await authenticatedCustomer(request);
   if(!user)return NextResponse.json({error:"Não autorizado."},{status:401});
+  await cancelExpiredPendingOrders();
   const [profile,orders,coupons]=await Promise.all([
     prisma.user.findUnique({where:{id:user.id},include:{addresses:{orderBy:{createdAt:"desc"}},favorites:{orderBy:{createdAt:"desc"},include:{product:true}}}}),
     prisma.order.findMany({where:{OR:[{customerId:user.id},{customerEmail:user.email}]},orderBy:{createdAt:"desc"},include:{items:true,payment:true,shipment:true}}),
