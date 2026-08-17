@@ -140,8 +140,8 @@ export function AdminDashboard() {
       headers.set("content-type", "application/json");
     return fetch(path, { ...init, headers });
   }, []);
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     try {
       const response = await request("/api/admin");
       if (response.status === 403) {
@@ -162,7 +162,7 @@ export function AdminDashboard() {
   useEffect(() => {
     load();
     const refresh = window.setInterval(() => {
-      void load();
+      void load(true);
     }, 60_000);
     return () => window.clearInterval(refresh);
   }, [load]);
