@@ -12,7 +12,9 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
   const [error,setError]=useState("");
 
   useEffect(()=>{
-    if(new URLSearchParams(window.location.search).get("sessao")==="expirada")setMessage("Sua sessão expirou por segurança. Entre novamente para continuar.");
+    if(new URLSearchParams(window.location.search).get("sessao")!=="expirada")return;
+    const timeout=window.setTimeout(()=>setMessage("Sua sessão expirou por segurança. Entre novamente para continuar."),0);
+    return()=>window.clearTimeout(timeout);
   },[]);
 
   function validCpf(value:string){
@@ -66,8 +68,9 @@ export function AuthForm({mode}:{mode:"login"|"register"}){
         const {data:result,error:authError}=await supabase.auth.signUp({email,password,options:{data:{name,phone:phone.replace(/\D/g,""),cpf:cpf.replace(/\D/g,"")},emailRedirectTo:`${window.location.origin}/conta`}});
         if(authError)throw authError;
         if(!result.session){
-          const {error:loginError}=await supabase.auth.signInWithPassword({email,password});
-          if(loginError)throw loginError;
+          setMessage("Conta criada com sucesso. Confira seu e-mail para confirmar o cadastro e depois entre na sua conta.");
+          event.currentTarget.reset();
+          return;
         }
         await redirectToCorrectPanel();
       }else{

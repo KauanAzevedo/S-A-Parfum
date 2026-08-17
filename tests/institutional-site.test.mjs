@@ -57,6 +57,16 @@ test("áreas de cliente e administração continuam presentes e protegidas",asyn
   assert.match(admin,/response\.status===403/);
 });
 
+test("cadastro não exibe erro depois de criar a conta",async()=>{
+  const [form,accountAuth]=await Promise.all([read("components/auth-form.tsx"),read("lib/account-auth.ts")]);
+  assert.match(form,/if\(!result\.session\)/);
+  assert.match(form,/Conta criada com sucesso/);
+  assert.doesNotMatch(form,/if\(!result\.session\)[\s\S]{0,200}signInWithPassword/);
+  assert.match(accountAuth,/findUnique\(\{ where: \{ id: profile\.id \} \}\)/);
+  assert.match(accountAuth,/error\.code === "P2002"/);
+  assert.doesNotMatch(accountAuth,/prisma\.user\.upsert/);
+});
+
 test("checkout usa InfinitePay e confirma pagamentos antes de aprovar pedidos",async()=>{
   const [checkout,infinitepay,webhook,form]=await Promise.all([
     read("app/api/checkout/route.ts"),read("lib/infinitepay.ts"),
