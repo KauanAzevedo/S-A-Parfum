@@ -81,3 +81,22 @@ test("checkout usa InfinitePay e confirma pagamentos antes de aprovar pedidos",a
   assert.match(form,/window\.location\.href = body\.paymentUrl/);
   assert.match(form,/Em até 4x sem juros/);
 });
+
+test("venda externa usa preço presencial e preserva histórico financeiro",async()=>{
+  const [schema,admin,route,styles]=await Promise.all([
+    read("prisma/schema.prisma"),read("components/admin-dashboard.tsx"),
+    read("app/api/admin/external-sales/route.ts"),read("app/globals.css")
+  ]);
+  assert.match(schema,/inPersonPrice\s+Decimal/);
+  assert.match(admin,/unitPrice: product\.inPersonPrice/);
+  assert.match(admin,/Preço no site:/);
+  assert.match(admin,/Buscar cliente por nome, telefone ou CPF/);
+  assert.match(admin,/Adicionar outra forma de pagamento/);
+  assert.match(admin,/Resumo da venda/);
+  assert.match(route,/originalInPersonPrice/);
+  assert.match(route,/sitePrice/);
+  assert.match(route,/changeCents/);
+  assert.match(route,/registeredBy: admin\.id/);
+  assert.match(styles,/grid-template-columns:minmax\(0,7fr\) minmax\(280px,3fr\)/);
+  assert.match(styles,/external-sale-summary\{position:sticky/);
+});

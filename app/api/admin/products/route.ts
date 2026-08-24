@@ -19,6 +19,7 @@ function productData(body: Record<string, unknown>) {
     family: text(body.family),
     notes: text(body.notes).split(",").map(note => note.trim()).filter(Boolean),
     price: text(body.price),
+    inPersonPrice: text(body.inPersonPrice) || text(body.price),
     compareAtPrice: text(body.compareAtPrice) || null,
     cost: text(body.cost) || "0",
     stock: Math.max(0, Number(body.stock) || 0),
