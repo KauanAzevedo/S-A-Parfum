@@ -100,3 +100,17 @@ test("venda externa usa preço presencial e preserva histórico financeiro",asyn
   assert.match(styles,/grid-template-columns:minmax\(0,7fr\) minmax\(280px,3fr\)/);
   assert.match(styles,/external-sale-summary\{position:sticky/);
 });
+
+test("ações administrativas atualizam a interface sem carregamento global",async()=>{
+  const [dashboard,productsRoute]=await Promise.all([
+    read("components/admin-dashboard.tsx"),read("app/api/admin/products/route.ts")
+  ]);
+  assert.match(dashboard,/void load\(true\)/);
+  assert.doesNotMatch(dashboard,/await load\(\)/);
+  assert.match(dashboard,/optimistic\?: \(current: AdminData\) => AdminData/);
+  assert.match(dashboard,/orders: current\.orders\.map/);
+  assert.match(dashboard,/products: current\.products\.filter/);
+  assert.match(dashboard,/coupons: current\.coupons\.filter/);
+  assert.match(productsRoute,/prisma\.cartItem\.deleteMany/);
+  assert.match(productsRoute,/prisma\.review\.deleteMany/);
+});
