@@ -165,3 +165,25 @@ test("home comercial, quiz e busca usam produtos reais do banco",async()=>{
   assert.match(admin,/name="occasions"/);
   assert.match(catalog,/melhor-avaliados/);
 });
+
+test("camadas de segurança protegem navegador, APIs, banco e uploads",async()=>{
+  const [config,proxy,upload,adminAuth,payment,sql]=await Promise.all([
+    read("next.config.ts"),read("proxy.ts"),read("app/api/admin/product-image/route.ts"),
+    read("lib/admin-auth.ts"),read("lib/infinitepay.ts"),read("prisma/supabase-security.sql")
+  ]);
+  for(const header of ["Content-Security-Policy","Strict-Transport-Security","X-Content-Type-Options","X-Frame-Options","Permissions-Policy"]){
+    assert.match(config,new RegExp(header));
+  }
+  assert.match(config,/poweredByHeader: false/);
+  assert.match(config,/private, no-store/);
+  assert.match(proxy,/Origem da requisição não autorizada/);
+  assert.match(proxy,/WEBHOOK_PATHS/);
+  assert.match(proxy,/UPLOAD_BODY_LIMIT/);
+  assert.match(upload,/hasValidImageSignature/);
+  assert.match(upload,/randomUUID/);
+  assert.match(adminAuth,/user\.role === "ADMIN"/);
+  assert.match(payment,/payment_check/);
+  assert.match(payment,/allowedCheckoutHosts/);
+  assert.match(sql,/revoke all on all tables in schema public from anon, authenticated/);
+  assert.match(sql,/enable row level security/);
+});
