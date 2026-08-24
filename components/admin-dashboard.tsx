@@ -318,9 +318,10 @@ export function AdminDashboard() {
       setData((current) => {
         if (!current) return current;
         const exists = current.products.some((product) => product.id === result.product.id);
-        const products = exists
+        const products = (exists
           ? current.products.map((product) => product.id === result.product.id ? result.product : product)
-          : [result.product, ...current.products];
+          : [result.product, ...current.products]
+        ).sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }));
         const next = {
           ...current,
           products,

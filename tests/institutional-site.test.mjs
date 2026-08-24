@@ -122,6 +122,8 @@ test("ações administrativas atualizam a interface sem carregamento global",asy
   assert.match(productsRoute,/revalidatePath\("\/"\)/);
   assert.match(productsRoute,/deletedAt: new Date\(\)/);
   assert.match(adminRoute,/where: \{ deletedAt: null \}/);
+  assert.match(adminRoute,/orderBy: \{ name: "asc" \}/);
+  assert.match(dashboard,/a\.name\.localeCompare\(b\.name, "pt-BR", \{ sensitivity: "base" \}\)/);
   assert.match(schema,/deletedAt\s+DateTime\?/);
   assert.match(splash,/pathname\.startsWith\("\/admin"\)/);
 });
