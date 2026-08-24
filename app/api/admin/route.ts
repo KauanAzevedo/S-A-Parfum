@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   await cancelExpiredPendingOrders();
 
   const [products, orders, coupons, users, auditLogs] = await Promise.all([
-    prisma.product.findMany({ where: { deletedAt: null }, include: { category: true, images: { orderBy: { position: "asc" } } }, orderBy: { createdAt: "desc" } }),
+    prisma.product.findMany({ where: { deletedAt: null }, include: { category: true, images: { orderBy: { position: "asc" } } }, orderBy: { name: "asc" } }),
     prisma.order.findMany({ include: { payment: true, items: true }, orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.coupon.findMany({ orderBy: { code: "asc" } }),
     prisma.user.findMany({ select: { id: true, name: true, email: true, cpf: true, phone: true, role: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 200 }),
