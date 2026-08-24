@@ -233,14 +233,16 @@ model Review {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  targetKey String
   rating    Int
   comment   String
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  @@unique([userId, productId])
+  @@unique([userId, targetKey])
+  @@index([targetKey, approved, createdAt])
 }
 
 model ReturnRequest {

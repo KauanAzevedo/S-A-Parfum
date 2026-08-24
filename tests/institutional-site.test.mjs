@@ -122,3 +122,19 @@ test("ações administrativas atualizam a interface sem carregamento global",asy
   assert.match(schema,/deletedAt\s+DateTime\?/);
   assert.match(splash,/pathname\.startsWith\("\/admin"\)/);
 });
+
+test("avaliações da loja e dos perfumes exigem cliente autenticado",async()=>{
+  const [form,route,home,product,schema]=await Promise.all([
+    read("components/review-form.tsx"),read("app/api/reviews/route.ts"),
+    read("app/page.tsx"),read("app/produto/[slug]/page.tsx"),read("prisma/schema.prisma")
+  ]);
+  assert.match(form,/Entrar para avaliar/);
+  assert.match(form,/authorization:`Bearer \$\{token\}`/);
+  assert.match(route,/authenticatedCustomer/);
+  assert.match(route,/status:401/);
+  assert.match(route,/rating<1\|\|rating>5/);
+  assert.match(route,/userId_targetKey/);
+  assert.match(home,/<ReviewForm target="store"/);
+  assert.match(product,/<ReviewForm target="product"/);
+  assert.match(schema,/@@unique\(\[userId, targetKey\]\)/);
+});
