@@ -58,7 +58,7 @@ export function Header() {
   }
 
   return <>
-    <div className="topbar"><span className="topbar-line"/>5% OFF no PIX<span className="topbar-line"/></div>
+    <div className="topbar"><span className="topbar-line"/>8% OFF no PIX<span className="topbar-line"/></div>
     <header className="site-header luxury-header">
       <div className="container-site header-main">
         <button className="menu-trigger mobile-only" onClick={() => setOpen(!open)} aria-label="Abrir menu">{open ? <X/> : <Menu/>}</button>

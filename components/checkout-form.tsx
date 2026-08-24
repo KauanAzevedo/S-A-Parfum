@@ -94,7 +94,7 @@ export function CheckoutForm() {
     () => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
     [items],
   );
-  const pixTotal = subtotal * 0.95;
+  const pixTotal = subtotal * 0.92;
   async function finish() {
     if (!addressId) {
       setError("Selecione ou cadastre um endereço de entrega.");
@@ -259,7 +259,7 @@ export function CheckoutForm() {
           <div className="payment-option selected">
             <span>
               <b>Pix</b>
-              <small>5% de desconto</small>
+              <small>8% de desconto</small>
             </span>
             <strong>{money(pixTotal)}</strong>
           </div>
@@ -310,7 +310,7 @@ export function CheckoutForm() {
             <strong>{money(subtotal)}</strong>
           </div>
           <div className="summary-line discount">
-            <span>Pix com 5% de desconto</span>
+            <span>Pix com 8% de desconto</span>
             <b>{money(pixTotal)}</b>
           </div>
           <label className="checkout-terms">

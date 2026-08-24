@@ -97,7 +97,7 @@ export async function confirmInfinitePayOrder(input: {
     throw new Error("Forma de pagamento não reconhecida.");
   }
   const fullAmount = Math.round(Number(order.subtotal) * 100);
-  const pixAmount = Math.round(fullAmount * 0.95);
+  const pixAmount = Math.round(fullAmount * 0.92);
   const confirmedAmount = Number(checked.amount);
   const allowedAmounts = captureMethod === "pix" ? [pixAmount, fullAmount] : [fullAmount];
   if (!allowedAmounts.includes(confirmedAmount)) {

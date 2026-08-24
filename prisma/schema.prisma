@@ -272,7 +272,7 @@ model AdminSettings {
   originState              String?
   maxInstallments          Int     @default(6)
   interestFreeInstallments Int     @default(6)
-  pixDiscount              Decimal @default(5) @db.Decimal(5, 2)
+  pixDiscount              Decimal @default(8) @db.Decimal(5, 2)
   showPricesOnPrint        Boolean @default(false)
   updatedAt                DateTime @updatedAt
 }
