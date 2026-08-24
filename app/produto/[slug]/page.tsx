@@ -13,7 +13,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
   const product=await prisma.product.findFirst({where:{slug,status:"ACTIVE"},include:{category:true,images:{orderBy:{position:"asc"}},reviews:{where:{approved:true},select:{rating:true}}}});
   if(!product)notFound();
   const images=product.images.length?product.images.map(image=>image.url):[product.imageUrl];
-  const price=Number(product.price);const oldPrice=product.compareAtPrice?Number(product.compareAtPrice):null;const pix=price*.95;
+  const price=Number(product.price);const oldPrice=product.compareAtPrice?Number(product.compareAtPrice):null;const pix=price*.92;
   const rating=product.reviews.length?product.reviews.reduce((sum,review)=>sum+review.rating,0)/product.reviews.length:0;
   const related=await prisma.product.findMany({where:{status:"ACTIVE",id:{not:product.id},OR:[{categoryId:product.categoryId},{gender:product.gender}]},include:{images:{orderBy:{position:"asc"},take:1}},orderBy:{createdAt:"desc"},take:4});
   return <><Header/><main className={`product-page product-luxury${product.stock<1?" product-sold-out":""}`}><div className="container-site">
@@ -22,7 +22,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
       <div className="product-intro"><p className="eyebrow">{product.brand}</p><h1>{product.name}</h1><div className="product-rating"><span>{rating?"★".repeat(Math.round(rating))+"☆".repeat(5-Math.round(rating)):"☆☆☆☆☆"}</span><small>{product.reviews.length?`${rating.toFixed(1)} · ${product.reviews.length} avaliações`:"Seja o primeiro a avaliar"}</small></div></div>
       <ul className="product-benefits"><li><ShieldCheck/><span><b>Compra segura</b>Ambiente protegido</span></li><li><CreditCard/><span><b>Pagamento facilitado</b>Até 6x sem juros</span></li><li><PackageCheck/><span><b>Produto original</b>Garantia S&amp;A</span></li></ul>
       <div className="product-order-box"><div className="product-order-details"><div className="product-volume"><span>Volume</span><button>{product.volume}</button></div><div className="product-stock"><span>Disponibilidade</span>{product.stock>0?<p><b>● Em estoque</b></p>:<p><b className="out">Indisponível</b></p>}</div></div>
-        <div className="product-order-price"><div className="pix-price-column"><span>No PIX</span>{oldPrice&&<del>De {money(oldPrice)}</del>}<div className="pix-main"><strong>{money(pix)}</strong><small>5% de desconto</small></div><p>Preço do produto <b>{money(price)}</b></p></div><div><span>No cartão</span><strong>{money(price)}</strong><small>Em até 6x de {money(price/6)} sem juros</small></div></div>
+        <div className="product-order-price"><div className="pix-price-column"><span>No PIX</span>{oldPrice&&<del>De {money(oldPrice)}</del>}<div className="pix-main"><strong>{money(pix)}</strong><small>8% de desconto</small></div><p>Preço do produto <b>{money(price)}</b></p></div><div><span>No cartão</span><strong>{money(price)}</strong><small>Em até 6x de {money(price/6)} sem juros</small></div></div>
         <ProductActions slug={product.slug} stock={product.stock}/>
       </div>
       <div className="product-shipping"><label><Truck/> Calcule o frete</label><div><input inputMode="numeric" placeholder="Digite seu CEP" aria-label="CEP"/><button>Calcular</button></div></div>

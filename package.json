@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma db execute --file prisma/migrations/20260817161000_add_in_person_price/migration.sql --url=\"$POSTGRES_URL_NON_POOLING\" && prisma db execute --file prisma/migrations/20260824133000_add_product_deleted_at/migration.sql --url=\"$POSTGRES_URL_NON_POOLING\" && prisma generate && next build",
+    "vercel-build": "prisma db execute --file prisma/migrations/20260817161000_add_in_person_price/migration.sql --url=\"$POSTGRES_URL_NON_POOLING\" && prisma db execute --file prisma/migrations/20260824133000_add_product_deleted_at/migration.sql --url=\"$POSTGRES_URL_NON_POOLING\" && prisma db execute --file prisma/migrations/20260824134500_update_pix_discount/migration.sql --url=\"$POSTGRES_URL_NON_POOLING\" && prisma generate && next build",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.mjs",
     "start": "next start",
