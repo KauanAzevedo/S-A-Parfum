@@ -144,3 +144,24 @@ test("avaliações da loja e dos perfumes exigem cliente autenticado",async()=>{
   assert.match(product,/className="product-rating" href="#avaliacoes"/);
   assert.match(schema,/@@unique\(\[userId, targetKey\]\)/);
 });
+
+test("home comercial, quiz e busca usam produtos reais do banco",async()=>{
+  const [home,quiz,recommendations,search,header,schema,admin,catalog]=await Promise.all([
+    read("app/page.tsx"),read("components/perfume-quiz.tsx"),read("app/api/recommendations/route.ts"),
+    read("app/api/search/route.ts"),read("components/header.tsx"),read("prisma/schema.prisma"),
+    read("components/admin-dashboard.tsx"),read("app/perfumes/page.tsx")
+  ]);
+  assert.match(home,/Sua presença começa/);
+  assert.match(home,/<PerfumeQuiz/);
+  assert.match(home,/Perfumes Árabes em Alta/);
+  assert.match(quiz,/Pergunta \{step\+1\} de \{questions\.length\}/);
+  assert.match(quiz,/Adicionar/);
+  assert.match(recommendations,/prisma\.product\.findMany/);
+  assert.match(recommendations,/compatibility/);
+  assert.match(search,/take:6/);
+  assert.match(header,/<InstantSearch/);
+  assert.match(schema,/styles\s+String\[\]/);
+  assert.match(schema,/isArabian\s+Boolean/);
+  assert.match(admin,/name="occasions"/);
+  assert.match(catalog,/melhor-avaliados/);
+});

@@ -84,6 +84,11 @@ model Product {
   description    String
   family         String
   notes          String[]
+  styles         String[]        @default([])
+  intensity      String          @default("")
+  occasions      String[]        @default([])
+  characteristics String[]       @default([])
+  isArabian      Boolean         @default(false)
   price          Decimal       @db.Decimal(10, 2)
   inPersonPrice  Decimal       @default(0) @db.Decimal(10, 2)
   compareAtPrice Decimal?      @db.Decimal(10, 2)
