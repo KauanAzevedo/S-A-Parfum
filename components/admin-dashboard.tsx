@@ -129,6 +129,7 @@ export function AdminDashboard() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [savingProduct, setSavingProduct] = useState(false);
+  const [productFormKey, setProductFormKey] = useState(0);
   const [savingSale, setSavingSale] = useState(false);
   const [saleFormKey, setSaleFormKey] = useState(0);
   const request = useCallback(async (path: string, init?: RequestInit) => {
@@ -335,6 +336,7 @@ export function AdminDashboard() {
       });
       setEditingProduct(null);
       form.reset();
+      setProductFormKey((current) => current + 1);
     }
     setSavingProduct(false);
   }
@@ -497,7 +499,7 @@ export function AdminDashboard() {
             <section className="admin-panel admin-form-panel">
               <h2>{editingProduct ? "Editar perfume" : "Cadastrar perfume"}</h2>
               <ProductForm
-                key={editingProduct?.id || "new"}
+                key={`${editingProduct?.id || "new"}:${productFormKey}`}
                 product={editingProduct}
                 saving={savingProduct}
                 onSubmit={saveProduct}
@@ -838,6 +840,7 @@ function ProductForm({
       : [];
   const [existing, setExisting] = useState(initial);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
+  useEffect(() => () => newPreviews.forEach((url) => URL.revokeObjectURL(url)), [newPreviews]);
   function selectImages(files: FileList | null) {
     setNewPreviews(
       files ? Array.from(files).map((file) => URL.createObjectURL(file)) : [],
