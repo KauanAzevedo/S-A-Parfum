@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { authenticatedAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
@@ -36,15 +38,35 @@ async function audit(userId: string, action: string, entityId: string, metadata?
   await prisma.auditLog.create({ data: { userId, action, entity: "Product", entityId, metadata } });
 }
 
+function refreshCatalog(slug?: string) {
+  revalidatePath("/");
+  revalidatePath("/perfumes");
+  if (slug) revalidatePath(`/produto/${slug}`);
+}
+
+type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: { category: { select: { name: true } }; images: true };
+}>;
+
+const serializeProduct = (product: ProductWithRelations) => ({
+  ...product,
+  price: Number(product.price),
+  inPersonPrice: Number(product.inPersonPrice),
+  compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+  cost: Number(product.cost),
+});
+
 export async function POST(request: Request) {
   const admin = await authenticatedAdmin(request); if (!admin) return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
   const body = await request.json(); const data = productData(body);
   if (!data.name || !data.brand || !data.gender || !data.volume || !data.price || !data.imageUrls.length) return NextResponse.json({ error: "Preencha os campos obrigatórios e adicione ao menos uma foto." }, { status: 400 });
   const category = await prisma.category.upsert({ where: { slug: data.categorySlug }, update: { name: data.categoryName }, create: { name: data.categoryName, slug: data.categorySlug } });
   const { categoryName, categorySlug, imageUrls, ...values } = data;
-  const product = await prisma.product.create({ data: { ...values, imageUrl:imageUrls[0], categoryId: category.id, images:{create:imageUrls.map((url,position)=>({url,alt:`${data.name} - foto ${position+1}`,position}))} } });
+  const product = await prisma.product.create({ data: { ...values, imageUrl:imageUrls[0], categoryId: category.id, images:{create:imageUrls.map((url,position)=>({url,alt:`${data.name} - foto ${position+1}`,position}))} }, include: { category: { select: { name: true } }, images: { orderBy: { position: "asc" } } } });
   await audit(admin.id, "CREATE", product.id, { name: product.name });
-  return NextResponse.json({ ok: true, id: product.id });
+  refreshCatalog(product.slug);
+  console.info("[admin/products] created", { productId: product.id, slug: product.slug });
+  return NextResponse.json({ ok: true, product: serializeProduct(product) });
 }
 
 export async function PATCH(request: Request) {
@@ -53,21 +75,27 @@ export async function PATCH(request: Request) {
   if (!id || !data.name || !data.brand || !data.price || !data.imageUrls.length) return NextResponse.json({ error: "Revise os dados do perfume e mantenha ao menos uma foto." }, { status: 400 });
   const category = await prisma.category.upsert({ where: { slug: data.categorySlug }, update: { name: data.categoryName }, create: { name: data.categoryName, slug: data.categorySlug } });
   const { categoryName, categorySlug, imageUrls, ...values } = data;
-  await prisma.product.update({ where: { id }, data: { ...values, imageUrl:imageUrls[0], categoryId: category.id, images:{deleteMany:{},create:imageUrls.map((url,position)=>({url,alt:`${data.name} - foto ${position+1}`,position}))} } });
+  const product = await prisma.product.update({ where: { id }, data: { ...values, imageUrl:imageUrls[0], categoryId: category.id, images:{deleteMany:{},create:imageUrls.map((url,position)=>({url,alt:`${data.name} - foto ${position+1}`,position}))} }, include: { category: { select: { name: true } }, images: { orderBy: { position: "asc" } } } });
   await audit(admin.id, "UPDATE", id, { name: data.name });
-  return NextResponse.json({ ok: true });
+  refreshCatalog(product.slug);
+  console.info("[admin/products] updated", { productId: product.id, slug: product.slug });
+  return NextResponse.json({ ok: true, product: serializeProduct(product) });
 }
 
 export async function DELETE(request: Request) {
   const admin = await authenticatedAdmin(request); if (!admin) return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
   const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ error: "Perfume inválido." }, { status: 400 });
   const used = await prisma.orderItem.count({ where: { productId: id } });
-  if (used) await prisma.product.update({ where: { id }, data: { status: "INACTIVE", featured: false } });
+  const product = await prisma.product.findUnique({ where: { id }, select: { slug: true } });
+  if (!product) return NextResponse.json({ error: "Perfume não encontrado." }, { status: 404 });
+  if (used) await prisma.product.update({ where: { id }, data: { status: "INACTIVE", featured: false, deletedAt: new Date() } });
   else await prisma.$transaction([
     prisma.cartItem.deleteMany({ where: { productId: id } }),
     prisma.review.deleteMany({ where: { productId: id } }),
     prisma.product.delete({ where: { id } }),
   ]);
   await audit(admin.id, used ? "ARCHIVE" : "DELETE", id);
-  return NextResponse.json({ ok: true, archived: used > 0 });
+  refreshCatalog(product.slug);
+  console.info("[admin/products] removed", { productId: id, archived: used > 0 });
+  return NextResponse.json({ ok: true, removed: true });
 }
