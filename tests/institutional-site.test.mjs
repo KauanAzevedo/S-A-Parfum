@@ -102,15 +102,23 @@ test("venda externa usa preço presencial e preserva histórico financeiro",asyn
 });
 
 test("ações administrativas atualizam a interface sem carregamento global",async()=>{
-  const [dashboard,productsRoute]=await Promise.all([
-    read("components/admin-dashboard.tsx"),read("app/api/admin/products/route.ts")
+  const [dashboard,productsRoute,adminRoute,splash,schema]=await Promise.all([
+    read("components/admin-dashboard.tsx"),read("app/api/admin/products/route.ts"),
+    read("app/api/admin/route.ts"),read("components/splash-screen.tsx"),read("prisma/schema.prisma")
   ]);
-  assert.match(dashboard,/void load\(true\)/);
+  assert.doesNotMatch(dashboard,/load\(true\)/);
   assert.doesNotMatch(dashboard,/await load\(\)/);
   assert.match(dashboard,/optimistic\?: \(current: AdminData\) => AdminData/);
+  assert.match(dashboard,/cachedAdminData/);
+  assert.match(dashboard,/result\?\.product/);
   assert.match(dashboard,/orders: current\.orders\.map/);
   assert.match(dashboard,/products: current\.products\.filter/);
   assert.match(dashboard,/coupons: current\.coupons\.filter/);
   assert.match(productsRoute,/prisma\.cartItem\.deleteMany/);
   assert.match(productsRoute,/prisma\.review\.deleteMany/);
+  assert.match(productsRoute,/revalidatePath\("\/"\)/);
+  assert.match(productsRoute,/deletedAt: new Date\(\)/);
+  assert.match(adminRoute,/where: \{ deletedAt: null \}/);
+  assert.match(schema,/deletedAt\s+DateTime\?/);
+  assert.match(splash,/pathname\.startsWith\("\/admin"\)/);
 });

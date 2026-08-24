@@ -119,10 +119,12 @@ const orderLabels: Record<string, string> = {
   REFUNDED: "Reembolsado",
 };
 
+let cachedAdminData: AdminData | null = null;
+
 export function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("overview");
-  const [data, setData] = useState<AdminData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AdminData | null>(() => cachedAdminData);
+  const [loading, setLoading] = useState(() => !cachedAdminData);
   const [notice, setNotice] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -146,8 +148,7 @@ export function AdminDashboard() {
       headers.set("content-type", "application/json");
     return fetch(path, { ...init, headers });
   }, []);
-  const load = useCallback(async (background = false) => {
-    if (!background) setLoading(true);
+  const load = useCallback(async () => {
     try {
       const response = await request("/api/admin");
       if (response.status === 403) {
@@ -158,7 +159,9 @@ export function AdminDashboard() {
         setNotice("Não foi possível carregar o painel.");
         return;
       }
-      setData(await response.json());
+      const result: AdminData = await response.json();
+      cachedAdminData = result;
+      setData(result);
     } catch {
       setNotice("Não foi possível carregar o painel.");
     } finally {
@@ -166,9 +169,9 @@ export function AdminDashboard() {
     }
   }, [request]);
   useEffect(() => {
-    load();
+    void load();
     const refresh = window.setInterval(() => {
-      void load(true);
+      void load();
     }, 60_000);
     return () => window.clearInterval(refresh);
   }, [load]);
@@ -199,7 +202,7 @@ export function AdminDashboard() {
     await getSupabaseBrowserClient().auth.signOut();
     window.location.href = "/";
   }
-  async function mutate(
+  async function mutate<T extends object = Record<string, unknown>>(
     path: string,
     method: string,
     body?: object,
@@ -207,26 +210,31 @@ export function AdminDashboard() {
   ) {
     setNotice("");
     const snapshot = data;
-    if (optimistic) setData((current) => current ? optimistic(current) : current);
+    let result: T & { error?: string };
+    if (optimistic) setData((current) => {
+      if (!current) return current;
+      const next = optimistic(current);
+      cachedAdminData = next;
+      return next;
+    });
     try {
       const response = await request(path, {
         method,
         body: body ? JSON.stringify(body) : undefined,
       });
-      const result = await response.json();
+      result = await response.json() as T & { error?: string };
       if (!response.ok) {
-        if (optimistic) setData(snapshot);
+        if (optimistic) { cachedAdminData = snapshot; setData(snapshot); }
         setNotice(result.error || "Não foi possível concluir a ação.");
-        return false;
+        return null;
       }
     } catch {
-      if (optimistic) setData(snapshot);
+      if (optimistic) { cachedAdminData = snapshot; setData(snapshot); }
       setNotice("Não foi possível concluir a ação.");
-      return false;
+      return null;
     }
     setNotice("Alteração salva com sucesso.");
-    void load(true);
-    return true;
+    return result;
   }
   function updateOrderStatus(id: string, status: string) {
     return mutate("/api/admin/orders", "PATCH", { id, status }, (current) => ({
@@ -300,13 +308,31 @@ export function AdminDashboard() {
       imageUrls,
       featured: formData.has("featured"),
     };
-    if (
-      await mutate(
+    const result = await mutate<{ product: Product }>(
         "/api/admin/products",
         editingProduct ? "PATCH" : "POST",
         body,
-      )
-    ) {
+      );
+    if (result?.product) {
+      setData((current) => {
+        if (!current) return current;
+        const exists = current.products.some((product) => product.id === result.product.id);
+        const products = exists
+          ? current.products.map((product) => product.id === result.product.id ? result.product : product)
+          : [result.product, ...current.products];
+        const next = {
+          ...current,
+          products,
+          metrics: {
+            ...current.metrics,
+            products: products.length,
+            activeProducts: products.filter((product) => product.status === "ACTIVE").length,
+            lowStock: products.filter((product) => product.stock <= product.minimumStock).length,
+          },
+        };
+        cachedAdminData = next;
+        return next;
+      });
       setEditingProduct(null);
       form.reset();
     }
@@ -321,9 +347,18 @@ export function AdminDashboard() {
       id: editingCoupon?.id,
       active: formData.has("active"),
     };
-    if (
-      await mutate("/api/admin/coupons", editingCoupon ? "PATCH" : "POST", body)
-    ) {
+    const result = await mutate<{ coupon: Coupon }>("/api/admin/coupons", editingCoupon ? "PATCH" : "POST", body);
+    if (result?.coupon) {
+      setData((current) => {
+        if (!current) return current;
+        const exists = current.coupons.some((coupon) => coupon.id === result.coupon.id);
+        const coupons = exists
+          ? current.coupons.map((coupon) => coupon.id === result.coupon.id ? result.coupon : coupon)
+          : [...current.coupons, result.coupon].sort((a, b) => a.code.localeCompare(b.code));
+        const next = { ...current, coupons };
+        cachedAdminData = next;
+        return next;
+      });
       setEditingCoupon(null);
       form.reset();
     }
@@ -337,8 +372,10 @@ export function AdminDashboard() {
       items: JSON.parse(String(formData.get("items") || "[]")),
       payments: JSON.parse(String(formData.get("payments") || "[]")),
     };
-    if (await mutate("/api/admin/external-sales", "POST", body))
+    if (await mutate("/api/admin/external-sales", "POST", body)) {
       setSaleFormKey((value) => value + 1);
+      void load();
+    }
     setSavingSale(false);
   }
   if (loading)
