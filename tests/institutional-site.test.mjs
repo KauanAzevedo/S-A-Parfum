@@ -110,6 +110,9 @@ test("ações administrativas atualizam a interface sem carregamento global",asy
   assert.doesNotMatch(dashboard,/await load\(\)/);
   assert.match(dashboard,/optimistic\?: \(current: AdminData\) => AdminData/);
   assert.match(dashboard,/cachedAdminData/);
+  assert.match(dashboard,/setProductFormKey\(\(current\) => current \+ 1\)/);
+  assert.match(dashboard,/key=\{`\$\{editingProduct\?\.id \|\| "new"\}:\$\{productFormKey\}`\}/);
+  assert.match(dashboard,/URL\.revokeObjectURL/);
   assert.match(dashboard,/result\?\.product/);
   assert.match(dashboard,/orders: current\.orders\.map/);
   assert.match(dashboard,/products: current\.products\.filter/);
