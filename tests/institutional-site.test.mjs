@@ -153,7 +153,7 @@ test("home comercial, quiz e busca usam produtos reais do banco",async()=>{
   ]);
   assert.match(home,/Sua presença começa/);
   assert.match(home,/<PerfumeQuiz/);
-  assert.match(home,/Perfumes Árabes em Alta/);
+  assert.doesNotMatch(home,/Perfumes Árabes em Alta|Masculinos Mais Vendidos|Femininos Mais Vendidos|Perfumes até R\$ 250/);
   assert.match(quiz,/Pergunta \{step\+1\} de \{questions\.length\}/);
   assert.match(quiz,/Adicionar/);
   assert.match(recommendations,/prisma\.product\.findMany/);
