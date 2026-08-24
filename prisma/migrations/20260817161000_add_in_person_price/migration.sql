@@ -1,5 +1,5 @@
 ALTER TABLE "Product"
-ADD COLUMN "inPersonPrice" DECIMAL(10, 2);
+ADD COLUMN IF NOT EXISTS "inPersonPrice" DECIMAL(10, 2);
 
 UPDATE "Product"
 SET "inPersonPrice" = "price"
