@@ -1099,7 +1099,27 @@ function ExternalSaleForm({
           <section className="external-section discount-section"><div className="external-section-title"><span>05</span><div><h3>Desconto</h3><p>Opcional e limitado ao subtotal dos produtos.</p></div></div><div className="discount-control"><div><button type="button" className={discountType === "VALUE" ? "active" : ""} onClick={() => setDiscountType("VALUE")}>R$</button><button type="button" className={discountType === "PERCENT" ? "active" : ""} onClick={() => setDiscountType("PERCENT")}>%</button></div><input type="number" min="0" max={discountType === "PERCENT" ? 100 : subtotal} step="0.01" value={discountInput || ""} onChange={(event) => setDiscountInput(Math.max(0, Number(event.target.value) || 0))}/></div><input type="hidden" name="discount" value={discount}/></section>
           <details className="external-section additional-info"><summary>Mais informações da venda</summary><div><label>Identificador / comprovante<input name="transactionReference" placeholder="Referência geral" /></label><label>NSU<input name="nsu" /></label><label>Código da transação<input name="transactionCode" /></label><label>Referência<input name="reference" /></label></div><label>Observações<textarea name="notes" placeholder="Venda pelo WhatsApp, cliente retirará amanhã..." /></label></details>
         </div>
-        <aside className="external-sale-summary"><p>Resumo da venda</p><span>{items.length} produto{items.length === 1 ? "" : "s"}</span><dl><div><dt>Subtotal</dt><dd>{money(subtotal)}</dd></div><div><dt>Desconto</dt><dd>- {money(discount)}</dd></div><div><dt>Acréscimo ao cliente</dt><dd>+ {money(customerFee)}</dd></div></dl><div className="summary-total"><span>Total cobrado</span><strong>{money(total)}</strong></div><dl className="summary-payment-status"><div><dt>Valor recebido</dt><dd>{money(paymentsTotal)}</dd></div><div><dt>{difference < 0 ? "Troco" : "Restante"}</dt><dd>{money(Math.abs(difference))}</dd></div></dl>{difference === 0 && <p className="payment-complete"><CheckCircle2/> Pagamento completo</p>}{difference > 0 && <p className={hasPending ? "payment-pending" : "payment-missing"}>{hasPending ? `Venda pendente: ${money(difference)} a receber.` : `Faltam ${money(difference)} nos pagamentos.`}</p>}{change > 0 && <p className="payment-complete">Troco calculado: {money(change)}</p>}<div className="summary-net"><span>Líquido estimado</span><b>{money(Math.max(0, Math.min(total, paymentsTotal - change) - operatorFee))}</b><small>Após {money(operatorFee)} em taxas da operadora</small></div><button type="submit" disabled={saving || !items.length || items.some((item) => item.quantity < 1 || item.unitPrice <= 0) || !payments.length || !validFinancial}>{saving ? "Registrando venda..." : "Registrar venda"}</button><small className="stock-note">O estoque só será baixado após a venda ser salva.</small></aside>
+        <aside className="external-sale-summary">
+          <header className="summary-header">
+            <div><ShoppingBag /><span>{items.length}</span></div>
+            <p><small>Resumo</small>Resumo da venda</p>
+            <span>{items.length ? `${items.length} produto${items.length === 1 ? "" : "s"} selecionado${items.length === 1 ? "" : "s"}` : "Nenhum produto selecionado"}</span>
+          </header>
+          <dl className="summary-breakdown">
+            <div><dt>Subtotal</dt><dd>{money(subtotal)}</dd></div>
+            <div><dt>Desconto</dt><dd className={discount > 0 ? "summary-discount" : ""}>- {money(discount)}</dd></div>
+            <div><dt>Acréscimo ao cliente</dt><dd>+ {money(customerFee)}</dd></div>
+          </dl>
+          <div className="summary-total"><span>Total cobrado</span><strong>{money(total)}</strong><small>Valor final da venda</small></div>
+          <dl className="summary-payment-status"><div><dt>Valor recebido</dt><dd>{money(paymentsTotal)}</dd></div><div><dt>{difference < 0 ? "Troco" : "Restante"}</dt><dd>{money(Math.abs(difference))}</dd></div></dl>
+          {!items.length && <p className="payment-waiting"><ShoppingBag /> Adicione um produto para começar</p>}
+          {!!items.length && difference === 0 && <p className="payment-complete"><CheckCircle2 /> Pagamento completo</p>}
+          {!!items.length && difference > 0 && <p className={hasPending ? "payment-pending" : "payment-missing"}>{hasPending ? `Venda pendente: ${money(difference)} a receber.` : `Faltam ${money(difference)} nos pagamentos.`}</p>}
+          {change > 0 && <p className="payment-complete"><CheckCircle2 /> Troco calculado: {money(change)}</p>}
+          <div className="summary-net"><span>Líquido estimado</span><b>{money(Math.max(0, Math.min(total, paymentsTotal - change) - operatorFee))}</b><small>Após {money(operatorFee)} em taxas da operadora</small></div>
+          <button type="submit" disabled={saving || !items.length || items.some((item) => item.quantity < 1 || item.unitPrice <= 0) || !payments.length || !validFinancial}>{saving ? "Registrando venda..." : "Registrar venda"}</button>
+          <small className="stock-note"><CheckCircle2 /> Estoque atualizado somente após salvar</small>
+        </aside>
       </div>
     </form>
   );
