@@ -199,20 +199,62 @@ export function AdminDashboard() {
     await getSupabaseBrowserClient().auth.signOut();
     window.location.href = "/";
   }
-  async function mutate(path: string, method: string, body?: object) {
+  async function mutate(
+    path: string,
+    method: string,
+    body?: object,
+    optimistic?: (current: AdminData) => AdminData,
+  ) {
     setNotice("");
-    const response = await request(path, {
-      method,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      setNotice(result.error || "Não foi possível concluir a ação.");
+    const snapshot = data;
+    if (optimistic) setData((current) => current ? optimistic(current) : current);
+    try {
+      const response = await request(path, {
+        method,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        if (optimistic) setData(snapshot);
+        setNotice(result.error || "Não foi possível concluir a ação.");
+        return false;
+      }
+    } catch {
+      if (optimistic) setData(snapshot);
+      setNotice("Não foi possível concluir a ação.");
       return false;
     }
     setNotice("Alteração salva com sucesso.");
-    await load();
+    void load(true);
     return true;
+  }
+  function updateOrderStatus(id: string, status: string) {
+    return mutate("/api/admin/orders", "PATCH", { id, status }, (current) => ({
+      ...current,
+      orders: current.orders.map((order) => order.id === id ? { ...order, status } : order),
+    }));
+  }
+  function removeProduct(product: Product) {
+    if (!confirm(`Remover ${product.name}?`)) return;
+    void mutate(`/api/admin/products?id=${product.id}`, "DELETE", undefined, (current) => ({
+      ...current,
+      products: current.products.filter((item) => item.id !== product.id),
+      metrics: { ...current.metrics, products: Math.max(0, current.metrics.products - 1) },
+    }));
+  }
+  function removeCoupon(coupon: Coupon) {
+    if (!confirm(`Remover o cupom ${coupon.code}?`)) return;
+    void mutate(`/api/admin/coupons?id=${coupon.id}`, "DELETE", undefined, (current) => ({
+      ...current,
+      coupons: current.coupons.filter((item) => item.id !== coupon.id),
+    }));
+  }
+  function updateUserRole(user: User) {
+    const role = user.role === "ADMIN" ? "CUSTOMER" : "ADMIN";
+    void mutate("/api/admin/users", "PATCH", { id: user.id, role }, (current) => ({
+      ...current,
+      users: current.users.map((item) => item.id === user.id ? { ...item, role } : item),
+    }));
   }
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -391,9 +433,7 @@ export function AdminDashboard() {
                 <h2>Pedidos recentes</h2>
                 <OrderTable
                   orders={data.orders.slice(0, 6)}
-                  onStatus={(id, status) =>
-                    mutate("/api/admin/orders", "PATCH", { id, status })
-                  }
+                  onStatus={updateOrderStatus}
                 />
               </section>
               <section className="admin-panel">
@@ -463,13 +503,7 @@ export function AdminDashboard() {
                         <Pencil />
                       </button>
                       <button
-                        onClick={() =>
-                          confirm(`Remover ${product.name}?`) &&
-                          mutate(
-                            `/api/admin/products?id=${product.id}`,
-                            "DELETE",
-                          )
-                        }
+                        onClick={() => removeProduct(product)}
                         aria-label="Remover"
                       >
                         <Trash2 />
@@ -489,9 +523,7 @@ export function AdminDashboard() {
             </div>
             <OrderTable
               orders={data.orders}
-              onStatus={(id, status) =>
-                mutate("/api/admin/orders", "PATCH", { id, status })
-              }
+              onStatus={updateOrderStatus}
             />
           </section>
         )}
@@ -529,9 +561,7 @@ export function AdminDashboard() {
                 orders={data.orders.filter(
                   (order) => order.source === "EXTERNAL",
                 )}
-                onStatus={(id, status) =>
-                  mutate("/api/admin/orders", "PATCH", { id, status })
-                }
+                onStatus={updateOrderStatus}
               />
             </section>
           </div>
@@ -621,10 +651,7 @@ export function AdminDashboard() {
                         <Pencil />
                       </button>
                       <button
-                        onClick={() =>
-                          confirm(`Remover o cupom ${coupon.code}?`) &&
-                          mutate(`/api/admin/coupons?id=${coupon.id}`, "DELETE")
-                        }
+                        onClick={() => removeCoupon(coupon)}
                       >
                         <Trash2 />
                       </button>
@@ -672,12 +699,7 @@ export function AdminDashboard() {
                       <button
                         className="admin-access-button"
                         disabled={user.id === data.admin.id}
-                        onClick={() =>
-                          mutate("/api/admin/users", "PATCH", {
-                            id: user.id,
-                            role: user.role === "ADMIN" ? "CUSTOMER" : "ADMIN",
-                          })
-                        }
+                        onClick={() => updateUserRole(user)}
                       >
                         {user.id === data.admin.id
                           ? "Sua conta"

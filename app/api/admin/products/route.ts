@@ -63,7 +63,11 @@ export async function DELETE(request: Request) {
   const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ error: "Perfume inválido." }, { status: 400 });
   const used = await prisma.orderItem.count({ where: { productId: id } });
   if (used) await prisma.product.update({ where: { id }, data: { status: "INACTIVE", featured: false } });
-  else await prisma.product.delete({ where: { id } });
+  else await prisma.$transaction([
+    prisma.cartItem.deleteMany({ where: { productId: id } }),
+    prisma.review.deleteMany({ where: { productId: id } }),
+    prisma.product.delete({ where: { id } }),
+  ]);
   await audit(admin.id, used ? "ARCHIVE" : "DELETE", id);
   return NextResponse.json({ ok: true, archived: used > 0 });
 }
