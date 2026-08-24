@@ -39,6 +39,11 @@ type Product = {
   description: string;
   family: string;
   notes: string[];
+  styles: string[];
+  intensity: string;
+  occasions: string[];
+  characteristics: string[];
+  isArabian: boolean;
   price: number;
   inPersonPrice: number;
   compareAtPrice?: number;
@@ -308,6 +313,7 @@ export function AdminDashboard() {
       id: editingProduct?.id,
       imageUrls,
       featured: formData.has("featured"),
+      isArabian: formData.has("isArabian"),
     };
     const result = await mutate<{ product: Product }>(
         "/api/admin/products",
@@ -906,6 +912,12 @@ function ProductForm({
         Notas, separadas por vírgula
         <input name="notes" defaultValue={product?.notes.join(", ")} />
       </label>
+      <div>
+        <label>Estilos da fragrância<input name="styles" defaultValue={product?.styles?.join(", ")} placeholder="Doce, Fresco, Amadeirado" /></label>
+        <label>Intensidade<select name="intensity" defaultValue={product?.intensity || "Moderado"}><option>Discreto</option><option>Moderado</option><option>Marcante</option><option>Muito marcante</option></select></label>
+      </div>
+      <label>Ocasiões recomendadas<input name="occasions" defaultValue={product?.occasions?.join(", ")} placeholder="Dia a dia, Trabalho, Festas, Noite" /></label>
+      <label>Características<input name="characteristics" defaultValue={product?.characteristics?.join(", ")} placeholder="Elegante, Envolvente, Refrescante" /></label>
       <label>
         Descrição
         <textarea name="description" defaultValue={product?.description} />
@@ -1036,6 +1048,7 @@ function ProductForm({
         />{" "}
         Exibir como destaque
       </label>
+      <label className="admin-check"><input name="isArabian" type="checkbox" defaultChecked={product?.isArabian}/> Perfume árabe</label>
       <div className="admin-form-actions">
         <button type="submit" disabled={saving}>
           {saving

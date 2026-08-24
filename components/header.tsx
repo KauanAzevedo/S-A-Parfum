@@ -1,9 +1,10 @@
 "use client";
 
-import { Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { Heart, Menu, ShoppingBag, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 import {CommerceCounts,readCommerceCounts,writeCommerceCounts} from "@/lib/commerce-counts";
+import {InstantSearch} from "@/components/instant-search";
 
 const links = [
   ["Novidades", "/perfumes?ordem=recentes"],
@@ -65,7 +66,7 @@ export function Header() {
         <a href="/" className="brand brand-image" aria-label="S&A Parfum - início"><img src="/logo-sa-header.png" alt="S&A Parfum"/></a>
         <nav className={open ? "nav open" : "nav"}>{links.map(([label, href]) => <a key={label} href={href}><span>{label}</span></a>)}</nav>
         <div className="header-icons">
-          <form className="compact-search" action="/perfumes"><Search/><input name="busca" aria-label="Pesquisar fragrância" placeholder="Pesquisar"/></form>
+          <InstantSearch/>
           <div className="account-menu">
             <button aria-label="Minha conta" className="account-trigger"><UserRound/>{customer && <span className="account-customer-name">{customer.name.split(" ")[0]}</span>}</button>
             <div className="account-panel">
