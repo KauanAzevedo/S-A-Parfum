@@ -23,10 +23,11 @@ function FilterMenu({name,value,onChange,options}:{name:string;value:string;onCh
   </details>;
 }
 
-export function CatalogFilters({search,gender,brand,order,brands,family,characteristic,maxPrice,availability}:{search:string;gender:string;brand:string;order:string;brands:string[];family:string;characteristic:string;maxPrice:number;availability:string}){
-  const[genderValue,setGenderValue]=useState(gender);const[brandValue,setBrandValue]=useState(brand);const[orderValue,setOrderValue]=useState(order||"destaques");
+export function CatalogFilters({search,gender,brand,brands}:{search:string;gender:string;brand:string;brands:string[]}){
+  const form=useRef<HTMLFormElement>(null);const previousFilters=useRef(`${gender}\0${brand}`);
+  const[genderValue,setGenderValue]=useState(gender);const[brandValue,setBrandValue]=useState(brand);
+  useEffect(()=>{const current=`${genderValue}\0${brandValue}`;if(previousFilters.current===current)return;previousFilters.current=current;form.current?.requestSubmit()},[genderValue,brandValue]);
   const genders=[{value:"",label:"Todos os gêneros"},{value:"Feminino",label:"Femininos"},{value:"Masculino",label:"Masculinos"},{value:"Unissex",label:"Unissex"}];
   const brandOptions=[{value:"",label:"Todas as marcas"},...brands.map(value=>({value,label:value}))];
-  const orderOptions=[{value:"destaques",label:"Mais relevantes"},{value:"mais-vendidos",label:"Mais vendidos"},{value:"menor-preco",label:"Menor preço"},{value:"maior-preco",label:"Maior preço"},{value:"recentes",label:"Novidades"},{value:"melhor-avaliados",label:"Melhor avaliados"}];
-  return <form className="catalog-tools catalog-tools-smart" action="/perfumes"><div className="filters"><input name="busca" defaultValue={search} placeholder="Nome, marca, notas ou estilo"/><FilterMenu name="genero" value={genderValue} onChange={setGenderValue} options={genders}/><FilterMenu name="marca" value={brandValue} onChange={setBrandValue} options={brandOptions}/><input name="familia" defaultValue={family} placeholder="Família olfativa"/><input name="caracteristica" defaultValue={characteristic} placeholder="Característica"/><input name="precoMax" type="number" min="0" defaultValue={maxPrice||""} placeholder="Preço máximo"/><select name="disponibilidade" defaultValue={availability}><option value="">Disponibilidade</option><option value="estoque">Em estoque</option></select></div><FilterMenu name="ordem" value={orderValue} onChange={setOrderValue} options={orderOptions}/><button>Filtrar</button></form>;
+  return <form ref={form} className="catalog-tools catalog-tools-smart" action="/perfumes"><div className="filters"><input name="busca" defaultValue={search} placeholder="Nome, marca, notas ou estilo"/><FilterMenu name="genero" value={genderValue} onChange={setGenderValue} options={genders}/><FilterMenu name="marca" value={brandValue} onChange={setBrandValue} options={brandOptions}/></div></form>;
 }
