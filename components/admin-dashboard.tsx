@@ -8,6 +8,9 @@ import {
   Package,
   Pencil,
   Plus,
+  Minus,
+  Search,
+  CheckCircle2,
   ShoppingBag,
   Star,
   Tag,
@@ -37,6 +40,7 @@ type Product = {
   family: string;
   notes: string[];
   price: number;
+  inPersonPrice: number;
   compareAtPrice?: number;
   cost: number;
   stock: number;
@@ -74,6 +78,8 @@ type User = {
   id: string;
   name: string;
   email: string;
+  cpf?: string;
+  phone?: string;
   role: string;
   createdAt: string;
 };
@@ -490,8 +496,8 @@ export function AdminDashboard() {
           </section>
         )}
         {tab === "sales" && (
-          <div className="admin-split">
-            <section className="admin-panel admin-form-panel">
+          <div className="admin-sales-stack">
+            <section className="admin-panel external-sale-panel">
               <div className="admin-panel-heading">
                 <div>
                   <h2>Registrar venda externa</h2>
@@ -503,6 +509,7 @@ export function AdminDashboard() {
                 products={data.products.filter(
                   (product) => product.status === "ACTIVE" && product.stock > 0,
                 )}
+                customers={data.users.filter((user) => user.role === "CUSTOMER")}
                 saving={savingSale}
                 onSubmit={saveExternalSale}
               />
@@ -842,7 +849,7 @@ function ProductForm({
       </label>
       <div>
         <label>
-          Preço*
+          Preço do site*
           <input
             name="price"
             type="number"
@@ -853,7 +860,20 @@ function ProductForm({
           />
         </label>
         <label>
-          Preço anterior
+          Preço presencial*
+          <input
+            name="inPersonPrice"
+            type="number"
+            step="0.01"
+            min="0.01"
+            defaultValue={product?.inPersonPrice || product?.price}
+            required
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          Preço anterior do site
           <input
             name="compareAtPrice"
             type="number"
@@ -972,124 +992,87 @@ function ProductForm({
 }
 function ExternalSaleForm({
   products,
+  customers,
   saving,
   onSubmit,
 }: {
   products: Product[];
+  customers: User[];
   saving: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
-  const firstProduct = products[0];
-  const [items, setItems] = useState([
-    { key: crypto.randomUUID(), productId: firstProduct?.id || "", quantity: 1, unitPrice: firstProduct?.price || 0 },
-  ]);
+  const [items, setItems] = useState<Array<{ key: string; productId: string; quantity: number; unitPrice: number }>>([]);
   const [payments, setPayments] = useState([
-    { key: crypto.randomUUID(), method: "PIX", amount: 0, installments: 1, customerFee: 0, operatorFee: 0, status: "PAID" },
+    { key: crypto.randomUUID(), method: "PIX", amount: 0, installments: 1, customerFee: 0, operatorFee: 0, status: "PAID", manualAmount: false },
   ]);
-  const [discount, setDiscount] = useState(0);
+  const [productQuery, setProductQuery] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [discountType, setDiscountType] = useState<"VALUE" | "PERCENT">("VALUE");
+  const [discountInput, setDiscountInput] = useState(0);
   const subtotal = items.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
+  const discount = Math.min(subtotal, discountType === "PERCENT" ? subtotal * Math.min(100, discountInput) / 100 : discountInput);
   const customerFee = payments.reduce((total, payment) => total + payment.customerFee, 0);
   const operatorFee = payments.reduce((total, payment) => total + payment.operatorFee, 0);
   const total = Math.max(0, subtotal - discount + customerFee);
   const paymentsTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const difference = Math.round((total - paymentsTotal) * 100) / 100;
+  const change = Math.max(0, -difference);
+  const hasPending = payments.some((payment) => payment.status === "PENDING");
+  const hasCash = payments.some((payment) => payment.method === "CASH");
+  const validFinancial = difference === 0 || (difference > 0 && hasPending) || (difference < 0 && hasCash);
+  const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId);
+  const matchingCustomers = customerQuery.trim().length < 2 ? [] : customers.filter((customer) => {
+    const haystack = `${customer.name} ${customer.email} ${customer.phone || ""} ${customer.cpf || ""}`.toLowerCase();
+    return haystack.includes(customerQuery.toLowerCase());
+  }).slice(0, 6);
+  const matchingProducts = productQuery.trim().length < 1 ? [] : products.filter((product) =>
+    `${product.name} ${product.brand} ${product.sku}`.toLowerCase().includes(productQuery.toLowerCase()),
+  ).slice(0, 8);
+  useEffect(() => {
+    setPayments((current) => current.map((payment, index) =>
+      index === 0 && !payment.manualAmount && current.length === 1
+        ? { ...payment, amount: total }
+        : payment,
+    ));
+  }, [total]);
   function updateItem(index: number, values: Partial<(typeof items)[number]>) {
     setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...values } : item));
   }
   function updatePayment(index: number, values: Partial<(typeof payments)[number]>) {
     setPayments((current) => current.map((payment, paymentIndex) => paymentIndex === index ? { ...payment, ...values } : payment));
   }
+  function addProduct(product: Product) {
+    setItems((current) => {
+      const existing = current.findIndex((item) => item.productId === product.id);
+      if (existing >= 0) return current.map((item, index) => index === existing ? { ...item, quantity: Math.min(product.stock, item.quantity + 1) } : item);
+      return [...current, { key: crypto.randomUUID(), productId: product.id, quantity: 1, unitPrice: product.inPersonPrice }];
+    });
+    setProductQuery("");
+  }
   return (
     <form className="admin-form external-sale-form" onSubmit={onSubmit}>
-      <div>
-        <label>
-          Nome do cliente*
-          <input name="customerName" required />
-        </label>
-        <label>
-          Telefone
-          <input name="customerPhone" inputMode="tel" />
-        </label>
-      </div>
-      <div>
-        <label>
-          E-mail
-          <input name="customerEmail" type="email" />
-        </label>
-        <label>
-          CPF
-          <input name="customerCpf" inputMode="numeric" />
-        </label>
-      </div>
-      <fieldset className="external-sale-items">
-        <legend>Perfumes vendidos</legend>
-        {items.map((item, index) => (
-          <div className="external-sale-item" key={item.key}>
-            <label>
-              Perfume
-              <select
-                value={item.productId}
-                onChange={(event) => { const product = products.find((value) => value.id === event.target.value); updateItem(index, { productId: event.target.value, unitPrice: product?.price || 0 }); }}
-                required
-              >
-                <option value="">Selecione</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} · {money(product.price)} · estoque{" "}
-                    {product.stock}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Preço presencial
-              <input type="number" min="0.01" step="0.01" value={item.unitPrice} onChange={(event) => updateItem(index, { unitPrice: Math.max(0, Number(event.target.value) || 0) })} required />
-              {products.find((product) => product.id === item.productId) && <small>Site: {money(products.find((product) => product.id === item.productId)!.price)}</small>}
-            </label>
-            <label>
-              Quantidade
-              <input
-                type="number"
-                min="1"
-                max={
-                  products.find((product) => product.id === item.productId)
-                    ?.stock || 1
-                }
-                value={item.quantity}
-                onChange={(event) => updateItem(index, { quantity: Math.max(1, Number(event.target.value) || 1) })}
-              />
-            </label>
-            <button
-              type="button"
-              disabled={items.length === 1}
-              onClick={() =>
-                setItems((current) =>
-                  current.filter((_, itemIndex) => itemIndex !== index),
-                )
-              }
-            >
-              <Trash2 /> Remover
-            </button>
-          </div>
-        ))}
-        <button
-          className="external-add-item"
-          type="button"
-          onClick={() =>
-            setItems((current) => [
-              ...current,
-              {
-                key: crypto.randomUUID(),
-                productId: products[0]?.id || "",
-                quantity: 1,
-                unitPrice: products[0]?.price || 0,
-              },
-            ])
-          }
-        >
-          <Plus /> Adicionar outro perfume
-        </button>
-      </fieldset>
+      <div className="external-sale-layout">
+        <div className="external-sale-flow">
+          <section className="external-section compact-section">
+            <div className="external-section-title"><span>01</span><div><h3>Canal da venda</h3><p>Usado apenas em relatórios. O preço aplicado será sempre o presencial.</p></div></div>
+            <label>Canal<select name="saleChannel" defaultValue="PRESENCIAL"><option value="PRESENCIAL">Presencial</option><option value="WHATSAPP">WhatsApp</option><option value="INSTAGRAM">Instagram</option><option value="TELEFONE">Telefone</option><option value="INDICACAO">Indicação</option><option value="OUTRO">Outro</option></select></label>
+          </section>
+          <section className="external-section">
+            <div className="external-section-title"><span>02</span><div><h3>Cliente <small>opcional</small></h3><p>Pesquise um cadastro ou registre a venda sem identificar o cliente.</p></div></div>
+            <div className="external-search-wrap"><Search/><input value={customerQuery} onChange={(event) => { setCustomerQuery(event.target.value); setSelectedCustomerId(""); }} placeholder="Buscar cliente por nome, telefone ou CPF..." />{matchingCustomers.length > 0 && <div className="external-search-results">{matchingCustomers.map((customer) => <button type="button" key={customer.id} onClick={() => { setSelectedCustomerId(customer.id); setCustomerQuery(customer.name); setShowNewCustomer(false); }}><b>{customer.name}</b><small>{customer.phone || customer.email}{customer.cpf ? ` · CPF ${customer.cpf}` : ""}</small></button>)}</div>}</div>
+            {selectedCustomer && <div className="selected-customer"><CheckCircle2/><span><b>{selectedCustomer.name}</b><small>{selectedCustomer.phone || selectedCustomer.email}</small></span><button type="button" onClick={() => { setSelectedCustomerId(""); setCustomerQuery(""); }}>Alterar</button></div>}
+            <div className="customer-actions"><button type="button" onClick={() => { setShowNewCustomer((value) => !value); setSelectedCustomerId(""); }}>+ Novo cliente</button><span>ou venda sem identificar cliente</span></div>
+            {showNewCustomer && <div className="new-customer-fields"><label>Nome<input name="customerName" /></label><label>Telefone<input name="customerPhone" inputMode="tel" /></label><label>CPF<input name="customerCpf" inputMode="numeric" /></label><label>E-mail<input name="customerEmail" type="email" /></label></div>}
+            {!showNewCustomer && <><input type="hidden" name="customerId" value={selectedCustomerId}/><input type="hidden" name="customerName" value={selectedCustomer?.name || ""}/><input type="hidden" name="customerPhone" value={selectedCustomer?.phone || ""}/><input type="hidden" name="customerCpf" value={selectedCustomer?.cpf || ""}/><input type="hidden" name="customerEmail" value={selectedCustomer?.email || ""}/></>}
+          </section>
+          <section className="external-section products-section">
+            <div className="external-section-title"><span>03</span><div><h3>Produtos</h3><p>O preço presencial vem automaticamente do cadastro e pode ser ajustado só nesta venda.</p></div></div>
+            <div className="external-search-wrap product-search"><Search/><input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Pesquisar perfume por nome, marca ou SKU..." />{matchingProducts.length > 0 && <div className="external-search-results">{matchingProducts.map((product) => <button type="button" key={product.id} onClick={() => addProduct(product)}><b>{product.name}</b><small>{money(product.inPersonPrice)} presencial · estoque {product.stock}</small></button>)}</div>}</div>
+            {!items.length && <div className="external-empty-products"><Search/><b>Adicione o primeiro perfume</b><span>Comece pesquisando pelo nome acima.</span></div>}
+            <div className="external-product-list">{items.map((item, index) => { const product = products.find((value) => value.id === item.productId)!; return <article key={item.key}><div className="external-product-heading"><div><small>{product.brand}</small><h4>{product.name}</h4><p>Preço no site: {money(product.price)} · Estoque disponível: {product.stock}</p></div><button type="button" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}><Trash2/> Remover</button></div><div className="external-product-controls"><label>Preço presencial<input type="number" min="0.01" step="0.01" value={item.unitPrice} onChange={(event) => updateItem(index, { unitPrice: Math.max(0, Number(event.target.value) || 0) })}/></label><div className="quantity-control"><span>Quantidade</span><div><button type="button" disabled={item.quantity <= 1} onClick={() => updateItem(index, { quantity: item.quantity - 1 })}><Minus/></button><b>{item.quantity}</b><button type="button" disabled={item.quantity >= product.stock} onClick={() => updateItem(index, { quantity: item.quantity + 1 })}><Plus/></button></div></div><div className="line-total"><span>Total</span><b>{money(item.unitPrice * item.quantity)}</b></div></div>{item.quantity >= product.stock && <p className="stock-limit">Estoque disponível: apenas {product.stock} unidade{product.stock === 1 ? "" : "s"}.</p>}</article>})}</div>
+          </section>
       <input
         type="hidden"
         name="items"
@@ -1097,80 +1080,26 @@ function ExternalSaleForm({
           items.map(({ productId, quantity, unitPrice }) => ({ productId, quantity, unitPrice })),
         )}
       />
-      <fieldset className="external-sale-items external-payments">
-        <legend>Pagamentos</legend>
+          <section className="external-section payments-section">
+            <div className="external-section-title"><span>04</span><div><h3>Pagamento</h3><p>Use uma ou mais formas. O valor restante é sugerido automaticamente.</p></div></div>
         {payments.map((payment, index) => (
-          <div className="external-payment-item" key={payment.key}>
-            <label>Forma<select value={payment.method} onChange={(event) => updatePayment(index, { method: event.target.value, installments: event.target.value === "CREDIT_CARD" ? payment.installments : 1 })}><option value="PIX">PIX</option><option value="CASH">Dinheiro</option><option value="CREDIT_CARD">Cartão de crédito</option><option value="DEBIT_CARD">Cartão de débito</option><option value="TRANSFER">Transferência</option></select></label>
-            <label>Valor recebido<input type="number" min="0.01" step="0.01" value={payment.amount || ""} onChange={(event) => updatePayment(index, { amount: Math.max(0, Number(event.target.value) || 0) })} required /></label>
+          <div className="external-payment-card" key={payment.key}>
+            <div className="payment-methods">{[["PIX","PIX"],["CASH","Dinheiro"],["DEBIT_CARD","Débito"],["CREDIT_CARD","Crédito"],["OTHER","Outro"]].map(([value,label]) => <button type="button" className={payment.method === value ? "active" : ""} key={value} onClick={() => updatePayment(index, { method: value, installments: value === "CREDIT_CARD" ? payment.installments : 1, ...(value === "CASH" ? { customerFee: 0, operatorFee: 0 } : {}) })}>{label}</button>)}</div>
+            <div className="payment-fields"><label>Valor recebido<input type="number" min="0.01" step="0.01" value={payment.amount || ""} onChange={(event) => updatePayment(index, { amount: Math.max(0, Number(event.target.value) || 0), manualAmount: true })} required /></label>
             {payment.method === "CREDIT_CARD" && <label>Parcelas<select value={payment.installments} onChange={(event) => updatePayment(index, { installments: Number(event.target.value) })}>{Array.from({ length: 12 }, (_, value) => value + 1).map((installments) => <option key={installments} value={installments}>{installments}x</option>)}</select></label>}
-            <label>Taxa para o cliente<input type="number" min="0" step="0.01" value={payment.customerFee} onChange={(event) => updatePayment(index, { customerFee: Math.max(0, Number(event.target.value) || 0) })} /></label>
-            <label>Taxa da operadora<input type="number" min="0" step="0.01" value={payment.operatorFee} onChange={(event) => updatePayment(index, { operatorFee: Math.max(0, Number(event.target.value) || 0) })} /></label>
+            {payment.method !== "CASH" && <label>Acréscimo ao cliente<input type="number" min="0" step="0.01" value={payment.customerFee} onChange={(event) => updatePayment(index, { customerFee: Math.max(0, Number(event.target.value) || 0) })} /></label>}
+            {payment.method !== "CASH" && <label>Taxa da operadora<input type="number" min="0" step="0.01" value={payment.operatorFee} onChange={(event) => updatePayment(index, { operatorFee: Math.max(0, Number(event.target.value) || 0) })} /></label>}
             <label>Situação<select value={payment.status} onChange={(event) => updatePayment(index, { status: event.target.value })}><option value="PAID">Pago</option><option value="PENDING">Pendente</option></select></label>
-            <button type="button" disabled={payments.length === 1} onClick={() => setPayments((current) => current.filter((_, paymentIndex) => paymentIndex !== index))}><Trash2 /> Remover</button>
+            </div>{payment.method === "CASH" && change > 0 && <p className="payment-change">Troco: <b>{money(change)}</b></p>}{payments.length > 1 && <button className="remove-payment" type="button" onClick={() => setPayments((current) => current.filter((_, paymentIndex) => paymentIndex !== index))}><Trash2 /> Remover pagamento</button>}
           </div>
         ))}
-        <button className="external-add-item" type="button" onClick={() => setPayments((current) => [...current, { key: crypto.randomUUID(), method: "CASH", amount: 0, installments: 1, customerFee: 0, operatorFee: 0, status: "PAID" }])}><Plus /> Adicionar outra forma de pagamento</button>
-      </fieldset>
+        <button className="external-add-item" type="button" onClick={() => setPayments((current) => [...current, { key: crypto.randomUUID(), method: "CASH", amount: Math.max(0, difference), installments: 1, customerFee: 0, operatorFee: 0, status: "PAID", manualAmount: false }])}><Plus /> Adicionar outra forma de pagamento</button>
+          </section>
       <input type="hidden" name="payments" value={JSON.stringify(payments.map(({ method, amount, installments, customerFee, operatorFee, status }) => ({ method, amount, installments, customerFee, operatorFee, status })))} />
-      <label>
-        Desconto concedido
-        <input
-          name="discount"
-          type="number"
-          min="0"
-          max={subtotal}
-          step="0.01"
-          value={discount}
-          onChange={(event) =>
-            setDiscount(Math.max(0, Number(event.target.value) || 0))
-          }
-        />
-      </label>
-      <div>
-        <label>
-          Canal da venda
-          <select name="saleChannel" defaultValue="PRESENCIAL">
-            <option value="PRESENCIAL">Presencial</option>
-            <option value="WHATSAPP">WhatsApp</option>
-            <option value="INDICACAO">Indicação</option>
-            <option value="OUTRO">Outro</option>
-          </select>
-        </label>
-        <label>
-          Identificador/comprovante
-          <input name="transactionReference" placeholder="NSU, código ou referência" />
-        </label>
-      </div>
-      <label>
-        Observações
-        <textarea
-          name="notes"
-          placeholder="Ex.: venda pelo WhatsApp, indicação, retirada presencial..."
-        />
-      </label>
-      <div className="external-sale-total">
-        <span>
-          Subtotal <b>{money(subtotal)}</b>
-        </span>
-        <span>
-          Total-base <b>{money(Math.max(0, subtotal - discount))}</b>
-        </span>
-        <span>
-          Acréscimo ao cliente <b>{money(customerFee)}</b>
-        </span>
-        <span>
-          Total cobrado <strong>{money(total)}</strong>
-        </span>
-        <span>
-          Líquido estimado <b>{money(Math.max(0, total - operatorFee))}</b>
-        </span>
-      </div>
-      {difference !== 0 && <p className="admin-notice">{difference > 0 ? `Falta informar ${money(difference)} nos pagamentos.` : `Os pagamentos excedem o total em ${money(Math.abs(difference))}.`}</p>}
-      <div className="admin-form-actions">
-        <button type="submit" disabled={saving || !products.length || difference !== 0}>
-          {saving ? "Registrando venda..." : "Registrar venda e baixar estoque"}
-        </button>
+          <section className="external-section discount-section"><div className="external-section-title"><span>05</span><div><h3>Desconto</h3><p>Opcional e limitado ao subtotal dos produtos.</p></div></div><div className="discount-control"><div><button type="button" className={discountType === "VALUE" ? "active" : ""} onClick={() => setDiscountType("VALUE")}>R$</button><button type="button" className={discountType === "PERCENT" ? "active" : ""} onClick={() => setDiscountType("PERCENT")}>%</button></div><input type="number" min="0" max={discountType === "PERCENT" ? 100 : subtotal} step="0.01" value={discountInput || ""} onChange={(event) => setDiscountInput(Math.max(0, Number(event.target.value) || 0))}/></div><input type="hidden" name="discount" value={discount}/></section>
+          <details className="external-section additional-info"><summary>Mais informações da venda</summary><div><label>Identificador / comprovante<input name="transactionReference" placeholder="Referência geral" /></label><label>NSU<input name="nsu" /></label><label>Código da transação<input name="transactionCode" /></label><label>Referência<input name="reference" /></label></div><label>Observações<textarea name="notes" placeholder="Venda pelo WhatsApp, cliente retirará amanhã..." /></label></details>
+        </div>
+        <aside className="external-sale-summary"><p>Resumo da venda</p><span>{items.length} produto{items.length === 1 ? "" : "s"}</span><dl><div><dt>Subtotal</dt><dd>{money(subtotal)}</dd></div><div><dt>Desconto</dt><dd>- {money(discount)}</dd></div><div><dt>Acréscimo ao cliente</dt><dd>+ {money(customerFee)}</dd></div></dl><div className="summary-total"><span>Total cobrado</span><strong>{money(total)}</strong></div><dl className="summary-payment-status"><div><dt>Valor recebido</dt><dd>{money(paymentsTotal)}</dd></div><div><dt>{difference < 0 ? "Troco" : "Restante"}</dt><dd>{money(Math.abs(difference))}</dd></div></dl>{difference === 0 && <p className="payment-complete"><CheckCircle2/> Pagamento completo</p>}{difference > 0 && <p className={hasPending ? "payment-pending" : "payment-missing"}>{hasPending ? `Venda pendente: ${money(difference)} a receber.` : `Faltam ${money(difference)} nos pagamentos.`}</p>}{change > 0 && <p className="payment-complete">Troco calculado: {money(change)}</p>}<div className="summary-net"><span>Líquido estimado</span><b>{money(Math.max(0, Math.min(total, paymentsTotal - change) - operatorFee))}</b><small>Após {money(operatorFee)} em taxas da operadora</small></div><button type="submit" disabled={saving || !items.length || items.some((item) => item.quantity < 1 || item.unitPrice <= 0) || !payments.length || !validFinancial}>{saving ? "Registrando venda..." : "Registrar venda"}</button><small className="stock-note">O estoque só será baixado após a venda ser salva.</small></aside>
       </div>
     </form>
   );
