@@ -139,5 +139,6 @@ test("avaliações da loja e dos perfumes exigem cliente autenticado",async()=>{
   assert.match(route,/userId_targetKey/);
   assert.match(home,/<ReviewForm target="store"/);
   assert.match(product,/<ReviewForm target="product"/);
+  assert.match(product,/className="product-rating" href="#avaliacoes"/);
   assert.match(schema,/@@unique\(\[userId, targetKey\]\)/);
 });
