@@ -1,7 +1,8 @@
-import { ArrowRight, Check, Gem, PackageCheck, ShieldCheck, Sparkles, Star } from "lucide-react";
+import { ArrowRight, Gem, PackageCheck, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
+import { ReviewForm } from "@/components/review-form";
 import { toCatalogProduct } from "@/lib/catalog-db";
 import { prisma } from "@/lib/prisma";
 
@@ -10,10 +11,9 @@ export default async function Home() {
     prisma.product.findMany({where:{status:"ACTIVE"},include:{category:true,images:{orderBy:{position:"asc"}}},orderBy:{createdAt:"desc"},take:6}),
     prisma.product.findMany({where:{status:"ACTIVE"},include:{category:true,images:{orderBy:{position:"asc"}}},orderBy:{createdAt:"desc"}}),
     prisma.orderItem.findMany({where:{order:{status:{in:["PAID","PREPARING","SHIPPED","DELIVERED"]}}},select:{productId:true,quantity:true,order:{select:{customerId:true}}}}),
-    prisma.review.findMany({where:{approved:true},include:{user:{select:{id:true,name:true}},product:{select:{name:true}}},orderBy:{createdAt:"desc"},take:3}),
+    prisma.review.findMany({where:{approved:true,targetKey:"STORE"},include:{user:{select:{name:true}}},orderBy:{createdAt:"desc"},take:6}),
   ]);
   const totals=new Map<string,number>();soldItems.forEach(item=>totals.set(item.productId,(totals.get(item.productId)||0)+item.quantity));
-  const verifiedPurchases=new Set(soldItems.filter(item=>item.order.customerId).map(item=>`${item.order.customerId}:${item.productId}`));
   const bestRecords=bestCandidates.sort((a,b)=>(totals.get(b.id)||0)-(totals.get(a.id)||0)||b.createdAt.getTime()-a.createdAt.getTime()).slice(0,6);
   const newest=newestRecords.map(product=>toCatalogProduct(product,"Novidade"));const best=bestRecords.map(product=>toCatalogProduct(product,"Mais vendido"));
   return <><Header/><main>
@@ -23,6 +23,6 @@ export default async function Home() {
   {best.length>0&&<section className="section home-products home-products-alt"><div className="container-site"><div className="section-heading"><div><p className="eyebrow">Preferidos dos clientes</p><h2>Mais vendidos</h2></div><a href="/perfumes">Explorar catálogo <ArrowRight size={15}/></a></div><div className="product-grid">{best.map(product=><ProductCard key={product.slug} product={product}/>)}</div></div></section>}
   <section id="conceito" className="editorial"><div className="editorial-image"/><div className="editorial-copy"><p className="eyebrow">A arte da perfumaria</p><h2>Uma assinatura<br/>só sua.</h2><p>Elegância não se anuncia. Ela permanece. Em breve, você encontrará notas que traduzem sua personalidade e deixam uma impressão inesquecível.</p></div></section>
   <section className="category-grid container-site"><a className="cat masculine" href="/perfumes?genero=masculino"><span>Para ele</span><h3>Masculinos</h3><b>Explorar coleção →</b></a><a className="cat feminine" href="/perfumes?genero=feminino"><span>Para ela</span><h3>Femininos</h3><b>Explorar coleção →</b></a><a className="cat arabic" href="/perfumes?categoria=arabe"><span>Intensos e opulentos</span><h3>Árabes</h3><b>Explorar coleção →</b></a></section>
-  <section className="reviews section"><div className="container-site"><p className="eyebrow center">Experiências perfumadas</p><h2 className="center">Quem conhece, recomenda.</h2>{homeReviews.length?<div className="review-grid">{homeReviews.map(review=>{const verified=verifiedPurchases.has(`${review.userId}:${review.productId}`);return <blockquote key={review.id}><div className="stars">{[1,2,3,4,5].map(value=><Star key={value} size={14} fill={value<=review.rating?"currentColor":"none"}/>)}</div><p>“{review.comment}”</p><footer>{review.user.name}<small>{review.product.name}{verified&&<> · Compra verificada <Check size={12}/></>}</small></footer></blockquote>})}</div>:<div className="reviews-empty"><div className="stars">{[1,2,3,4,5].map(value=><Star key={value} size={17}/>)}</div><h3>Seja o primeiro a avaliar</h3><p>As experiências reais dos nossos clientes aparecerão aqui.</p><a href="/perfumes">Conhecer os perfumes</a></div>}</div></section>
+  <section id="avaliacoes" className="reviews section"><div className="container-site"><p className="eyebrow center">Experiências perfumadas</p><h2 className="center">Quem conhece, recomenda.</h2>{homeReviews.length?<div className="review-grid">{homeReviews.map(review=><blockquote key={review.id}><div className="stars">{[1,2,3,4,5].map(value=><Star key={value} size={14} fill={value<=review.rating?"currentColor":"none"}/>)}</div><p>“{review.comment}”</p><footer>{review.user.name}<small>Cliente S&amp;A Parfum</small></footer></blockquote>)}</div>:<div className="reviews-empty"><div className="stars">{[1,2,3,4,5].map(value=><Star key={value} size={17}/>)}</div><h3>Seja o primeiro a avaliar</h3><p>As experiências reais dos nossos clientes aparecerão aqui.</p></div>}<ReviewForm target="store"/></div></section>
   <section className="newsletter"><div><Sparkles size={26}/><p className="eyebrow">Círculo S&amp;A</p><h2>Receba novidades<br/>antes de todos.</h2><p>Curadorias, lançamentos e condições especiais direto no seu e-mail.</p></div><form><label className="sr-only" htmlFor="email">Seu melhor e-mail</label><input id="email" type="email" placeholder="Seu melhor e-mail" required/><button type="submit">Quero fazer parte</button></form></section>
 </main><Footer/></>; }

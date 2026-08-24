@@ -1,16 +1,17 @@
-import {CreditCard,PackageCheck,ShieldCheck,Truck} from "lucide-react";
+import {CreditCard,PackageCheck,ShieldCheck,Star,Truck} from "lucide-react";
 import {notFound} from "next/navigation";
 import {Footer} from "@/components/footer";
 import {Header} from "@/components/header";
 import {ProductActions} from "@/components/product-actions";
 import {ProductGallery} from "@/components/product-gallery";
+import {ReviewForm} from "@/components/review-form";
 import {prisma} from "@/lib/prisma";
 
 const money=(value:number)=>value.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
 export default async function ProductPage({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
-  const product=await prisma.product.findFirst({where:{slug,status:"ACTIVE"},include:{category:true,images:{orderBy:{position:"asc"}},reviews:{where:{approved:true},select:{rating:true}}}});
+  const product=await prisma.product.findFirst({where:{slug,status:"ACTIVE",deletedAt:null},include:{category:true,images:{orderBy:{position:"asc"}},reviews:{where:{approved:true},include:{user:{select:{name:true}}},orderBy:{createdAt:"desc"}}}});
   if(!product)notFound();
   const images=product.images.length?product.images.map(image=>image.url):[product.imageUrl];
   const price=Number(product.price);const oldPrice=product.compareAtPrice?Number(product.compareAtPrice):null;const pix=price*.92;
@@ -29,6 +30,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
       <p className="product-code">Cód. {product.sku} · {product.category.name}</p>
     </section></div>
     <section className="product-information"><div className="product-description-column"><p className="eyebrow">Conheça a fragrância</p><h2>Descrição do produto</h2><p>{product.description||`${product.name} é uma fragrância selecionada pela curadoria S&A Parfum.`}</p><section className="product-notes"><p className="eyebrow">Pirâmide olfativa</p><h2>Notas da fragrância</h2><div>{product.notes.length?product.notes.map(note=><span key={note}>{note}</span>):<p>Notas olfativas em preparação.</p>}</div></section></div><aside><h2>Características</h2><dl><div><dt>Marca</dt><dd>{product.brand}</dd></div><div><dt>Gênero</dt><dd>{product.gender}</dd></div><div><dt>Família olfativa</dt><dd>{product.family||"Não informada"}</dd></div><div><dt>Volume</dt><dd>{product.volume}</dd></div><div><dt>Categoria</dt><dd>{product.category.name}</dd></div></dl></aside></section>
+    <section id="avaliacoes" className="product-reviews"><div className="product-reviews-heading"><p className="eyebrow">Opiniões de clientes</p><h2>Avaliações de {product.name}</h2><p>{product.reviews.length?`${rating.toFixed(1)} de 5 · ${product.reviews.length} ${product.reviews.length===1?"avaliação":"avaliações"}`:"Seja a primeira pessoa a avaliar esta fragrância."}</p></div>{product.reviews.length>0&&<div className="product-review-list">{product.reviews.map(review=><article key={review.id}><div className="stars">{[1,2,3,4,5].map(value=><Star key={value} size={15} fill={value<=review.rating?"currentColor":"none"}/>)}</div><p>“{review.comment}”</p><footer><b>{review.user.name}</b><small>Cliente S&amp;A</small></footer></article>)}</div>}<ReviewForm target="product" productId={product.slug}/></section>
     {related.length>0&&<section className="related-products"><div><p className="eyebrow">Continue descobrindo</p><h2>Perfumes relacionados</h2></div><div className="related-grid">{related.map(item=><a className={item.stock<1?"out-of-stock":""} href={`/produto/${item.slug}`} key={item.id}><img src={item.images[0]?.url||item.imageUrl} alt={item.name}/>{item.stock<1&&<span>Esgotado</span>}<small>{item.brand}</small><h3>{item.name}</h3><b>{money(Number(item.price))}</b></a>)}</div></section>}
   </div></main><Footer/></>;
 }
